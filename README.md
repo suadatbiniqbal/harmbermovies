@@ -35,10 +35,10 @@ Harmber Movies is a Flutter application designed to provide a clean, responsive,
 ## Screenshots
 
 <div align="center">
-  <img src="assets/home_screen.png" alt="Home Screen" width="200"/>
-  <img src="assets/player_screen.png" alt="Player Screen" width="200"/>
-  <img src="assets/search_screen.png" alt="Search Screen" width="200"/>
-  <img src="assets/movie_screen.png" alt="Movie Detail" width="200"/>
+  <img src="assets/home_screen.jpeg" alt="Home Screen" width="200"/>
+  <img src="assets/player_screen.jpeg" alt="Player Screen" width="200"/>
+  <img src="assets/search_screen.jpeg" alt="Search Screen" width="200"/>
+  <img src="assets/movie_screen.jpeg" alt="Movie Detail" width="200"/>
 </div>
 
 ---
