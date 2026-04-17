@@ -1,70 +1,125 @@
 <div align="center">
-  <img src="assets/logo.png" alt="Harmber Movies Logo" width="120" />
+  <img src="assets/logo.png" alt="Harmber Movies Logo" width="110" />
+
   <h1>Harmber Movies</h1>
-  <p>A premium, fast, and feature-rich movie & TV streaming application built with Flutter.</p>
+
+  <p>Modern Flutter-based movie and TV browsing application.</p>
+
+  <p>
+    <a href="https://github.com/suadatbiniqbal/harmbermovies/stargazers">
+      <img src="https://img.shields.io/github/stars/suadatbiniqbal/harmbermovies?style=flat" />
+    </a>
+    <a href="https://github.com/suadatbiniqbal/harmbermovies/releases">
+      <img src="https://img.shields.io/github/v/release/suadatbiniqbal/harmbermovies" />
+    </a>
+    <a href="https://github.com/suadatbiniqbal/harmbermovies/blob/main/LICENSE">
+      <img src="https://img.shields.io/github/license/suadatbiniqbal/harmbermovies" />
+    </a>
+    <a href="https://github.com/suadatbiniqbal/harmbermovies">
+      <img src="https://img.shields.io/github/repo-size/suadatbiniqbal/harmbermovies" />
+    </a>
+    <a href="https://discord.gg/zYeyBMK4SP">
+      <img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white" />
+    </a>
+  </p>
 </div>
 
-## ✨ Features
+---
 
-- **Cinematic UI:** Beautiful, Google TV-inspired interface focusing on elegant transitions, glassmorphism, and deep immersion.
-- **Vast Catalog:** Powered by the TMDB API. Fetch the latest Trending, Top Rated, and Upcoming movies and TV shows instantly.
-- **Responsive Layouts:** Adaptive grid views that look stunning on both mobile portrait screens and larger landscape tablets.
-- **Smart Web Player:** Enjoy seamless video playback via a custom WebView container featuring heavy popup-blocking and anti-zoom scripts. Includes a handy overlay to minimize the video.
-- **Theme Engine:** Built-in persistence for Light and Dark modes.
-- **Monetization Built-in:** Includes an `AdBannerContainer` integrated natively to safely maximize RPM using Adsterra across the Search, Watchlist, and Home screens.
-- **Community Focus:** Includes randomized Discord join prompts to foster community growth!
-- **Auto-Updates:** GitHub-powered auto-update checker included.
+## Overview
 
-## 📸 Screenshots
+Harmber Movies is a Flutter application designed to provide a clean, responsive, and performant experience for browsing movies and TV shows.
 
-> **Note:** Just drop your screenshot images into the `assets` folder as named below to have them show up beautifully here!
+---
+
+## Screenshots
 
 <div align="center">
-  <img src="assets/home_screen.png" alt="Home Screen" width="220"/>
-  &nbsp;&nbsp;&nbsp;
-  <img src="assets/player_screen.png" alt="Player Screen" width="220"/>
-  &nbsp;&nbsp;&nbsp;
-  <img src="assets/search_screen.png" alt="Search Screen" width="220"/>
-  &nbsp;&nbsp;&nbsp;
-  <img src="assets/settings_screen.png" alt="Settings Screen" width="220"/>
+  <img src="assets/home_screen.png" alt="Home Screen" width="200"/>
+  <img src="assets/player_screen.png" alt="Player Screen" width="200"/>
+  <img src="assets/search_screen.png" alt="Search Screen" width="200"/>
+  <img src="assets/movie_screen.png" alt="Movie Detail" width="200"/>
 </div>
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
-- [Flutter SDK](https://flutter.dev/docs/get-started/install) (latest stable)
-- Android Studio / Xcode
+## Features
 
-### Installation
+- Responsive and modern UI  
+- Browse trending and top-rated content  
+- Search functionality  
+- Watchlist support  
+- WebView-based video player  
+- Light and dark themes  
+- Ad integration ready  
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/suadatbiniqbal/harmbermovies.git
-   cd harmbermovies
-   ```
+---
 
-2. Install the required Flutter packages:
-   ```bash
-   flutter pub get
-   ```
+## Getting Started
 
-3. Run the application:
-   ```bash
-   flutter run
-   ```
+### Requirements
 
-## 🛠 Tech Stack
-- **Framework:** Flutter
-- **Data Source:** [TMDB API](https://www.themoviedb.org/)
-- **Streaming Backend:** custom embed via `webview_flutter`
-- **Animations:** `flutter_animate`
-- **Architecture:** ValueNotifiers and Singletons 
+- Flutter SDK (latest stable)  
+- Android Studio or Xcode  
 
-## 📝 License
-This project is for educational and entertainment purposes. Ensure you comply with TMDB's terms of service and relevant copyright laws in your region when deploying streaming-based features.
+### Setup
+
+git clone https://github.com/suadatbiniqbal/harmbermovies.git
+cd harmbermovies
+flutter pub get
+flutter run
+
+---
+
+## Community
+
+Join the Discord server:
+
+https://discord.gg/zYeyBMK4SP
+
+---
+
+## Releases
+
+Download latest builds:
+
+https://github.com/suadatbiniqbal/harmbermovies/releases
+
+---
+
+## Tech Stack
+
+- Flutter  
+- TMDB API  
+- webview_flutter  
+- Firebase (optional)  
+
+---
+
+## Configuration
+
+This repository does not include:
+
+- API keys  
+- Firebase configuration files  
+- Keystore files  
+
+You must provide your own configuration before running the project.
+
+---
+
+## Star History
+
+https://star-history.com/#suadatbiniqbal/harmbermovies&Date
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
 
 ---
 
 <div align="center">
-  <b>Built with ❤️ by the Vetra</b>
+  <sub>© 2026 Harmber Movies</sub>
 </div>
