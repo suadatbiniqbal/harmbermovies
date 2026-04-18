@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/logo.png" alt="Harmber Movies Logo" width="110" />
+  <img src="https://raw.githubusercontent.com/suadatbiniqbal/harmbermovies/main/assets/logo.png" alt="Harmber Movies Logo" width="110" />
 
   <h1>Harmber Movies</h1>
 
@@ -28,98 +28,43 @@
 
 ## Overview
 
-Harmber Movies is a Flutter application designed to provide a clean, responsive, and performant experience for browsing movies and TV shows.
+Harmber Movies is a Flutter application designed for a clean, fast, and smooth experience for browsing movies and TV shows.
 
 ---
 
 ## Screenshots
 
 <div align="center">
-  <img src="assets/home_screen.jpeg" alt="Home Screen" width="200"/>
-  <img src="assets/player_screen.jpeg" alt="Player Screen" width="200"/>
-  <img src="assets/search_screen.jpeg" alt="Search Screen" width="200"/>
-  <img src="assets/movie_screen.jpeg" alt="Movie Detail" width="200"/>
+  <img src="https://raw.githubusercontent.com/suadatbiniqbal/harmbermovies/main/assets/home_screen.jpeg" width="200"/>
+  <img src="https://raw.githubusercontent.com/suadatbiniqbal/harmbermovies/main/assets/player_screen.jpeg" width="200"/>
+  <img src="https://raw.githubusercontent.com/suadatbiniqbal/harmbermovies/main/assets/search_screen.jpeg" width="200"/>
+  <img src="https://raw.githubusercontent.com/suadatbiniqbal/harmbermovies/main/assets/movie_screen.jpeg" width="200"/>
 </div>
 
 ---
 
 ## Features
 
-- Responsive and modern UI  
-- Browse trending and top-rated content  
+- Modern responsive UI  
+- Trending & top-rated movies  
 - Search functionality  
 - Watchlist support  
-- WebView-based video player  
-- Light and dark themes  
-- Ad integration ready  
+- WebView video player  
+- Light / dark themes  
+- Ads integration ready  
 
 ---
 
 ## Getting Started
 
 ### Requirements
-
-- Flutter SDK (latest stable)  
-- Android Studio or Xcode  
+- Flutter SDK (stable)
+- Android Studio / VS Code
 
 ### Setup
 
+```bash
 git clone https://github.com/suadatbiniqbal/harmbermovies.git
 cd harmbermovies
 flutter pub get
 flutter run
-
----
-
-## Community
-
-Join the Discord server:
-
-https://discord.gg/zYeyBMK4SP
-
----
-
-## Releases
-
-Download latest builds:
-
-https://github.com/suadatbiniqbal/harmbermovies/releases
-
----
-
-## Tech Stack
-
-- Flutter  
-- TMDB API  
-- webview_flutter  
-- Firebase (optional)  
-
----
-
-## Configuration
-
-This repository does not include:
-
-- API keys  
-- Firebase configuration files  
-- Keystore files  
-
-You must provide your own configuration before running the project.
-
----
-
-## Star History
-
-https://star-history.com/#suadatbiniqbal/harmbermovies&Date
-
----
-
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
-
----
-
-<div align="center">
-  <sub>© 2026 Harmber Movies</sub>
-</div>
