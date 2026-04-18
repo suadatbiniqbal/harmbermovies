@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../models/movie.dart';
 
 class TmdbService {
@@ -13,6 +16,25 @@ class TmdbService {
   final Map<String, _CacheEntry> _cache = {};
   final _client = http.Client();
   SharedPreferences? _prefs;
+
+  static DateTime? _lastWarningTime;
+
+  static void _showJioWarning() {
+    if (_lastWarningTime != null && 
+        DateTime.now().difference(_lastWarningTime!).inMinutes < 5) {
+      return;
+    }
+    _lastWarningTime = DateTime.now();
+    
+    Fluttertoast.showToast(
+      msg: "Loading is slow. Maybe you have Jio SIM or poor internet? Please try another network.",
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: const Color(0xFFE53935),
+      textColor: Colors.white,
+      fontSize: 13.0,
+    );
+  }
 
   Future<void> _initCache() async {
     if (_prefs != null) return;
@@ -54,7 +76,15 @@ class TmdbService {
           'api_key': _apiKey,
           ...?params,
         });
-        final res = await _client.get(uri).timeout(const Duration(seconds: 10));
+        
+        final stopwatch = Stopwatch()..start();
+        final res = await _client.get(uri).timeout(const Duration(seconds: 15));
+        stopwatch.stop();
+
+        if (stopwatch.elapsed.inSeconds > 8) {
+          _showJioWarning();
+        }
+
         if (res.statusCode == 200) {
           final data = json.decode(res.body);
           final results = data['results'] as List? ?? [];
@@ -68,7 +98,10 @@ class TmdbService {
           // Rate limited, wait and retry
           await Future.delayed(Duration(milliseconds: 500 * (i + 1)));
         }
-      } catch (_) {
+      } catch (e) {
+        if (i == retries - 1) {
+          _showJioWarning();
+        }
         if (i < retries - 1) {
           await Future.delayed(Duration(milliseconds: 500 * (i + 1)));
         }
@@ -91,7 +124,15 @@ class TmdbService {
           'api_key': _apiKey,
           ...?params,
         });
-        final res = await _client.get(uri).timeout(const Duration(seconds: 10));
+        
+        final stopwatch = Stopwatch()..start();
+        final res = await _client.get(uri).timeout(const Duration(seconds: 15));
+        stopwatch.stop();
+
+        if (stopwatch.elapsed.inSeconds > 8) {
+          _showJioWarning();
+        }
+
         if (res.statusCode == 200) {
           final data = json.decode(res.body);
           _cache[cacheKey] = _CacheEntry(data);
@@ -100,7 +141,10 @@ class TmdbService {
         } else if (res.statusCode == 429) {
           await Future.delayed(Duration(milliseconds: 500 * (i + 1)));
         }
-      } catch (_) {
+      } catch (e) {
+        if (i == retries - 1) {
+          _showJioWarning();
+        }
         if (i < retries - 1) {
           await Future.delayed(Duration(milliseconds: 500 * (i + 1)));
         }

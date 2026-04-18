@@ -593,7 +593,7 @@ class _HomeScreenState extends State<HomeScreen>
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                            colors: [Color.fromARGB(255, 4, 138, 210), Color.fromARGB(255, 25, 89, 199)],
                           ),
                           borderRadius: BorderRadius.circular(6),
                         ),

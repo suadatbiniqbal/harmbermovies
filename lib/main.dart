@@ -21,6 +21,9 @@ void main() async {
   await ThemeService.instance.init();
   await WatchlistService.instance.init();
 
+  // Load ISP config for TMDB
+  // (Removed due to Jio DoH removal)
+
   // Firebase (safe init)
   try {
     await Firebase.initializeApp(

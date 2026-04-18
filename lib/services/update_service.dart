@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 class UpdateService {
   static const _releasesUrl =
       'https://api.github.com/repos/suadatbiniqbal/harmbermovies/releases/latest';
-  static const currentVersion = '1.0.1';
+  static const currentVersion = '1.0.2';
 
   static bool _isNewer(String remote, String current) {
     final r = remote.split('.').map(int.parse).toList();
