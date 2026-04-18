@@ -31,6 +31,8 @@
 Harmber Movies is a clean, fast, and modern Flutter app for browsing movies and TV shows with a smooth UI experience and rich discovery features.
 
 ---
+📊 Star History
+<a href="https://www.star-history.com/?repos=suadatbiniqbal%2Fharmbermovies&type=date"> <picture> <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=suadatbiniqbal/harmbermovies&type=date&theme=dark" /> <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=suadatbiniqbal/harmbermovies&type=date" /> <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=suadatbiniqbal/harmbermovies&type=date" /> </picture> </a> ```
 
 ## 📸 Screenshots
 
@@ -67,4 +69,4 @@ Harmber Movies is a clean, fast, and modern Flutter app for browsing movies and 
 git clone https://github.com/suadatbiniqbal/harmbermovies.git
 cd harmbermovies
 flutter pub get
-flutter run
+flutter run```
