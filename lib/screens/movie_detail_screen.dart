@@ -563,7 +563,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               radius: 36,
               backgroundColor: t.surface2,
               backgroundImage:
-                  c.profileUrl.isNotEmpty ? NetworkImage(c.profileUrl) : null,
+                  c.profileUrl.isNotEmpty ? CachedNetworkImageProvider(c.profileUrl) : null,
               child: c.profileUrl.isEmpty
                   ? Icon(Icons.person, color: t.textMuted)
                   : null,

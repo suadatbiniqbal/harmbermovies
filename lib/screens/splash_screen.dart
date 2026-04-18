@@ -1,6 +1,6 @@
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'root_screen.dart';
@@ -34,10 +34,33 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
+  bool _hasError = false;
+
   Future<void> _startSplash() async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (!mounted) return;
-    _navigateToApp();
+    final hasInternet = await _checkConnectionRecursive();
+    
+    if (hasInternet) {
+      if (mounted) _navigateToApp();
+    }
+  }
+
+  Future<bool> _checkConnectionRecursive() async {
+    if (!mounted) return false;
+    setState(() => _hasError = false);
+    
+    try {
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(const Duration(seconds: 3));
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        return true;
+      }
+    } catch (_) {}
+
+    if (!mounted) return false;
+    setState(() => _hasError = true);
+    
+    await Future.delayed(const Duration(seconds: 3));
+    return _checkConnectionRecursive();
   }
 
   void _navigateToApp() {
@@ -46,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen>
         pageBuilder: (_, __, ___) => const RootScreen(),
         transitionsBuilder: (_, a, __, child) =>
             FadeTransition(opacity: a, child: child),
-        transitionDuration: const Duration(milliseconds: 800),
+        transitionDuration: const Duration(milliseconds: 400),
       ),
     );
   }
@@ -150,13 +173,25 @@ class _SplashScreenState extends State<SplashScreen>
 
                 const SizedBox(height: 48),
 
-                // iOS-style loader
-                const CupertinoActivityIndicator(
-                  radius: 16,
-                  color: Colors.white70,
-                )
-                    .animate()
-                    .fadeIn(delay: 1000.ms, duration: 500.ms),
+                // iOS-style loader or error text
+                if (_hasError)
+                  Text(
+                    'No Internet Connection',
+                    style: GoogleFonts.inter(
+                      color: Colors.redAccent,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ).animate().fadeIn(duration: 400.ms)
+                else
+                  const SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
+                    ),
+                  ).animate().fadeIn(duration: 500.ms),
               ],
             ),
           ),

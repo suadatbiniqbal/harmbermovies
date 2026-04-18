@@ -4,9 +4,20 @@ import 'package:http/http.dart' as http;
 class UpdateService {
   static const _releasesUrl =
       'https://api.github.com/repos/suadatbiniqbal/harmbermovies/releases/latest';
-  static const currentVersion = '1.0.0';
+  static const currentVersion = '1.0.1';
 
-  /// Returns release info map or null if no update / error
+  static bool _isNewer(String remote, String current) {
+    final r = remote.split('.').map(int.parse).toList();
+    final c = current.split('.').map(int.parse).toList();
+    for (int i = 0; i < 3; i++) {
+      final rv = i < r.length ? r[i] : 0;
+      final cv = i < c.length ? c[i] : 0;
+      if (rv > cv) return true;
+      if (rv < cv) return false;
+    }
+    return false;
+  }
+
   static Future<Map<String, dynamic>?> checkForUpdate() async {
     try {
       final response = await http.get(
@@ -17,7 +28,7 @@ class UpdateService {
         final data = json.decode(response.body) as Map<String, dynamic>;
         final tagName =
             (data['tag_name'] as String?)?.replaceAll('v', '') ?? '';
-        if (tagName.isNotEmpty && tagName != currentVersion) {
+        if (tagName.isNotEmpty && _isNewer(tagName, currentVersion)) {
           return data;
         }
       }
@@ -25,7 +36,6 @@ class UpdateService {
     return null;
   }
 
-  /// Get download URL for APK from latest release
   static String? getApkUrl(Map<String, dynamic> release) {
     final assets = release['assets'] as List? ?? [];
     for (final asset in assets) {
@@ -34,7 +44,6 @@ class UpdateService {
         return asset['browser_download_url'] as String?;
       }
     }
-    // Fallback to the release page
     return release['html_url'] as String?;
   }
 }

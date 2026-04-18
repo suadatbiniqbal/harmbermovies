@@ -532,7 +532,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                                     radius: 32,
                                     backgroundColor: t.surface2,
                                     backgroundImage: c.profileUrl.isNotEmpty
-                                        ? NetworkImage(c.profileUrl)
+                                        ? CachedNetworkImageProvider(c.profileUrl)
                                         : null,
                                     child: c.profileUrl.isEmpty
                                         ? Icon(Icons.person, color: t.textMuted)

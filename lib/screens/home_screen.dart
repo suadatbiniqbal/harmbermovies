@@ -42,6 +42,10 @@ class _HomeScreenState extends State<HomeScreen>
   bool _hasError = false;
   int _heroIndex = 0;
   bool _isScrolled = false;
+  bool _chunk2Loaded = false;
+  bool _chunk3Loaded = false;
+  bool _isLoadingChunk2 = false;
+  bool _isLoadingChunk3 = false;
 
   @override
   void initState() {
@@ -64,6 +68,14 @@ class _HomeScreenState extends State<HomeScreen>
       setState(() => _isScrolled = true);
     } else if (_scrollController.offset <= 50 && _isScrolled) {
       setState(() => _isScrolled = false);
+    }
+
+    if (_scrollController.offset > 100 && !_chunk2Loaded && !_isLoadingChunk2) {
+      _loadChunk2();
+    }
+    
+    if (_scrollController.offset > 400 && !_chunk3Loaded && !_isLoadingChunk3) {
+      _loadChunk3();
     }
   }
 
@@ -134,56 +146,43 @@ class _HomeScreenState extends State<HomeScreen>
     setState(() {
       _loading = true;
       _hasError = false;
+      _chunk2Loaded = false;
+      _chunk3Loaded = false;
+      _isLoadingChunk2 = false;
+      _isLoadingChunk3 = false;
+      _popular = [];
+      _topRated = [];
+      _nowPlaying = [];
+      _upcoming = [];
+      _popularTV = [];
+      _airingToday = [];
+      _topRatedTV = [];
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please wait, loading data...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
     try {
-      final results = await Future.wait([
-        _api.getTrending(),
-        _api.getPopularMovies(),
-        _api.getTopRatedMovies(),
-        _api.getNowPlaying(),
-        _api.getUpcoming(),
-        _api.getPopularTV(),
-        _api.getAiringToday(),
-        _api.getTopRatedTV(),
-      ]);
-
+      // Chunk 1: Hero & Trending (Crucial for first paint)
+      final trending = await _api.getTrending();
+      if (trending.isEmpty) throw Exception('Network failed');
+      
       if (!mounted) return;
-
-      final trending = results[0];
-      if (trending.isEmpty) {
-        throw Exception('Network failed');
-      }
-
       setState(() {
         _trending = trending;
-        _popular = results[1];
-        _topRated = results[2];
-        _nowPlaying = results[3];
-        _upcoming = results[4];
-        _popularTV = results[5];
-        _airingToday = results[6];
-        _topRatedTV = results[7];
         _loading = false;
       });
 
-      // Fetch logos in the background to avoid blocking the first frame render
-      final heroItems = trending.take(6).toList();
-      try {
-        final logoPathResults = await Future.wait(
-            heroItems.map((m) => _api.getLogoPath(m.id, isTV: m.isTV)));
-            
-        if (!mounted) return;
-        setState(() {
-          _trending = _trending.asMap().entries.map((entry) {
-            if (entry.key < 6 && entry.key < logoPathResults.length) {
-              return entry.value.copyWith(logoPath: logoPathResults[entry.key]);
-            }
-            return entry.value;
-          }).toList();
-        });
-      } catch (_) {
-        // Ignored
-      }
+      // Background logo fetch for heroes
+      _fetchHeroLogos(trending.take(6).toList());
+
+      // Start chunk 2 straight away to be faster
+      _loadChunk2();
+
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -192,6 +191,69 @@ class _HomeScreenState extends State<HomeScreen>
         });
       }
     }
+  }
+
+  Future<void> _loadChunk2() async {
+    if (_isLoadingChunk2 || _chunk2Loaded) return;
+    setState(() => _isLoadingChunk2 = true);
+    try {
+      final nextChunk = await Future.wait([
+        _api.getPopularMovies(),
+        _api.getTopRatedMovies(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _popular = nextChunk[0];
+        _topRated = nextChunk[1];
+        _chunk2Loaded = true;
+        _isLoadingChunk2 = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingChunk2 = false);
+    }
+  }
+
+  Future<void> _loadChunk3() async {
+    if (_isLoadingChunk3 || _chunk3Loaded) return;
+    setState(() => _isLoadingChunk3 = true);
+    try {
+      final finalChunk = await Future.wait([
+        _api.getNowPlaying(),
+        _api.getUpcoming(),
+        _api.getPopularTV(),
+        _api.getAiringToday(),
+        _api.getTopRatedTV(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _nowPlaying = finalChunk[0];
+        _upcoming = finalChunk[1];
+        _popularTV = finalChunk[2];
+        _airingToday = finalChunk[3];
+        _topRatedTV = finalChunk[4];
+        _chunk3Loaded = true;
+        _isLoadingChunk3 = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingChunk3 = false);
+    }
+  }
+
+  Future<void> _fetchHeroLogos(List<Movie> heroItems) async {
+    try {
+      final logoPathResults = await Future.wait(
+          heroItems.map((m) => _api.getLogoPath(m.id, isTV: m.isTV)));
+          
+      if (!mounted) return;
+      setState(() {
+        _trending = _trending.asMap().entries.map((entry) {
+          if (entry.key < 6 && entry.key < logoPathResults.length) {
+            return entry.value.copyWith(logoPath: logoPathResults[entry.key]);
+          }
+          return entry.value;
+        }).toList();
+      });
+    } catch (_) {}
   }
 
   void _navigateToDetail(Movie movie) {
@@ -259,34 +321,41 @@ class _HomeScreenState extends State<HomeScreen>
             SectionRow(
                 title: 'Popular Movies',
                 icon: Icons.local_fire_department_rounded,
-                movies: _popular),
+                movies: _popular,
+                isLoading: !_chunk2Loaded),
             SectionRow(
                 title: 'Now Playing',
                 icon: Icons.play_circle_outline_rounded,
-                movies: _nowPlaying),
+                movies: _nowPlaying,
+                isLoading: !_chunk3Loaded),
             SectionRow(
                 title: 'Top Rated',
                 icon: Icons.star_rounded,
-                movies: _topRated),
+                movies: _topRated,
+                isLoading: !_chunk2Loaded),
             const SizedBox(height: 8),
             const AdBannerContainer(),
             const SizedBox(height: 8),
             SectionRow(
                 title: 'Coming Soon',
                 icon: Icons.upcoming_rounded,
-                movies: _upcoming),
+                movies: _upcoming,
+                isLoading: !_chunk3Loaded),
             SectionRow(
                 title: 'Popular TV',
                 icon: Icons.tv_rounded,
-                movies: _popularTV),
+                movies: _popularTV,
+                isLoading: !_chunk3Loaded),
             SectionRow(
                 title: 'Airing Today',
                 icon: Icons.live_tv_rounded,
-                movies: _airingToday),
+                movies: _airingToday,
+                isLoading: !_chunk3Loaded),
             SectionRow(
                 title: 'Top Rated TV',
                 icon: Icons.emoji_events_rounded,
-                movies: _topRatedTV),
+                movies: _topRatedTV,
+                isLoading: !_chunk3Loaded),
             const SizedBox(height: 16),
             const AdBannerContainer(),
             const SizedBox(height: 60),

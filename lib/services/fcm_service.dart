@@ -31,7 +31,7 @@ class FcmService {
 
       // Subscribe to all_users topic (not supported on web)
       try {
-        await messaging.subscribeToTopic('all_users');
+        await messaging.subscribeToTopic('all');
         debugPrint('FCM: Subscribed to all_users topic');
       } catch (_) {
         debugPrint('FCM: Topic subscription not supported on this platform');

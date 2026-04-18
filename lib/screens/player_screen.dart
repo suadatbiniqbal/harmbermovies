@@ -45,13 +45,25 @@ class _PlayerScreenState extends State<PlayerScreen>
   // Guard: init WebView only once
   bool _webViewInitialized = false;
 
-  final _servers = const ['Videasy', 'Videasy Alt'];
+  final _servers = const ['Server 1', 'Server 2', 'Server 3'];
 
   String get _url {
-    if (widget.isTV) {
-      return 'https://player.videasy.net/tv/${widget.id}/$_currentSeason/$_currentEpisode';
+    if (_selectedServer == 0) {
+      if (widget.isTV) {
+        return 'https://player.videasy.net/tv/${widget.id}/$_currentSeason/$_currentEpisode';
+      }
+      return 'https://player.videasy.net/movie/${widget.id}';
+    } else if (_selectedServer == 1) {
+      if (widget.isTV) {
+        return 'https://vidfast.pro/tv/${widget.id}/$_currentSeason/$_currentEpisode?autoPlay=true';
+      }
+      return 'https://vidfast.pro/movie/${widget.id}?autoPlay=true';
+    } else {
+      if (widget.isTV) {
+        return 'https://vidsrc.net/embed/tv?tmdb=${widget.id}&season=$_currentSeason&episode=$_currentEpisode';
+      }
+      return 'https://vidsrc.net/embed/movie?tmdb=${widget.id}';
     }
-    return 'https://player.videasy.net/movie/${widget.id}';
   }
 
   static const _playerScript = '''
@@ -77,7 +89,8 @@ class _PlayerScreenState extends State<PlayerScreen>
           if(t.tagName==='A'){
             var h = t.getAttribute('href')||'';
             var tg = t.getAttribute('target')||'';
-            if(tg==='_blank' || (!h.includes('videasy.net') && !h.startsWith('#') && h.length>1)){
+            var allowed = h.includes('videasy.net') || h.includes('vidfast.pro') || h.includes('vidsrc');
+            if(tg==='_blank' || (!allowed && !h.startsWith('#') && h.length>1)){
               e.preventDefault(); e.stopPropagation(); return false;
             }
           }
@@ -147,6 +160,9 @@ class _PlayerScreenState extends State<PlayerScreen>
         },
         onNavigationRequest: (request) {
           if (!request.url.contains('videasy.net') &&
+              !request.url.contains('vidfast.pro') &&
+              !request.url.contains('vidsrc.net') &&
+              !request.url.contains('vidsrc') &&
               !request.url.startsWith('about:') &&
               !request.url.startsWith('data:') &&
               !request.url.startsWith('blob:')) {
@@ -223,6 +239,16 @@ class _PlayerScreenState extends State<PlayerScreen>
               ),
               elevation: 0,
               actions: [
+                IconButton(
+                  icon: const Icon(Icons.fullscreen_rounded, color: Colors.white70),
+                  tooltip: 'Full Screen',
+                  onPressed: () {
+                    SystemChrome.setPreferredOrientations([
+                      DeviceOrientation.landscapeLeft,
+                      DeviceOrientation.landscapeRight,
+                    ]);
+                  },
+                ),
                 PopupMenuButton<int>(
                   icon: const Icon(Icons.dns_rounded,
                       color: Colors.white70, size: 22),
@@ -264,6 +290,22 @@ class _PlayerScreenState extends State<PlayerScreen>
               children: [
                 // WebView is always in the tree — never conditionally removed
                 WebViewWidget(controller: _controller),
+
+                if (isLandscape)
+                  Positioned(
+                    top: 16,
+                    left: 16,
+                    child: IconButton(
+                      icon: const Icon(Icons.fullscreen_exit_rounded, color: Colors.white, size: 28),
+                      style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                      tooltip: 'Exit Full Screen',
+                      onPressed: () {
+                        SystemChrome.setPreferredOrientations([
+                          DeviceOrientation.portraitUp,
+                        ]);
+                      },
+                    ),
+                  ),
 
                 if (_hasError)
                   Container(

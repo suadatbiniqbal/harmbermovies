@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/movie.dart';
 
 class TmdbService {
@@ -11,9 +12,34 @@ class TmdbService {
 
   final Map<String, _CacheEntry> _cache = {};
   final _client = http.Client();
+  SharedPreferences? _prefs;
+
+  Future<void> _initCache() async {
+    if (_prefs != null) return;
+    _prefs = await SharedPreferences.getInstance();
+    final stored = _prefs!.getString('tmdb_cache');
+    if (stored != null) {
+      try {
+        final map = json.decode(stored) as Map<String, dynamic>;
+        map.forEach((k, v) {
+          _cache[k] = _CacheEntry(v['data'], timestamp: DateTime.parse(v['timestamp']));
+        });
+      } catch (_) {}
+    }
+  }
+
+  void _saveCache() {
+    if (_prefs == null) return;
+    final map = _cache.map((k, v) => MapEntry(k, {
+      'data': v.data,
+      'timestamp': v.timestamp.toIso8601String(),
+    }));
+    _prefs!.setString('tmdb_cache', json.encode(map));
+  }
 
   Future<List<Movie>> _fetchList(String path,
       {Map<String, String>? params, int retries = 3}) async {
+    await _initCache();
     final cacheKey = 'list_$path${params?.toString() ?? ""}';
     if (_cache.containsKey(cacheKey) && _cache[cacheKey]!.isValid) {
       return (_cache[cacheKey]!.data as List)
@@ -33,6 +59,7 @@ class TmdbService {
           final data = json.decode(res.body);
           final results = data['results'] as List? ?? [];
           _cache[cacheKey] = _CacheEntry(results);
+          _saveCache();
           return results
               .where((j) => j['media_type'] != 'person')
               .map((j) => Movie.fromJson(j))
@@ -52,6 +79,7 @@ class TmdbService {
 
   Future<Map<String, dynamic>> _fetchJson(String path,
       {Map<String, String>? params, int retries = 3}) async {
+    await _initCache();
     final cacheKey = 'json_$path${params?.toString() ?? ""}';
     if (_cache.containsKey(cacheKey) && _cache[cacheKey]!.isValid) {
       return Map<String, dynamic>.from(_cache[cacheKey]!.data);
@@ -67,6 +95,7 @@ class TmdbService {
         if (res.statusCode == 200) {
           final data = json.decode(res.body);
           _cache[cacheKey] = _CacheEntry(data);
+          _saveCache();
           return data;
         } else if (res.statusCode == 429) {
           await Future.delayed(Duration(milliseconds: 500 * (i + 1)));
@@ -244,7 +273,7 @@ class _CacheEntry {
   final dynamic data;
   final DateTime timestamp;
 
-  _CacheEntry(this.data) : timestamp = DateTime.now();
+  _CacheEntry(this.data, {DateTime? timestamp}) : timestamp = timestamp ?? DateTime.now();
 
-  bool get isValid => DateTime.now().difference(timestamp).inMinutes < 5;
+  bool get isValid => DateTime.now().difference(timestamp).inHours < 6;
 }
