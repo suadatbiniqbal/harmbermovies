@@ -15,6 +15,7 @@ import '../widgets/section_row.dart';
 import '../widgets/ad_banner.dart';
 import 'movie_detail_screen.dart';
 import 'tv_detail_screen.dart';
+import '../widgets/history_row.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -329,6 +330,7 @@ class _HomeScreenState extends State<HomeScreen>
           children: [
             _buildHeroCarousel(t),
             const AdBannerContainer(),
+            const HistoryRow(mediaTypeFilter: 'tmdb'),
             SectionRow(
                 title: 'Trending Now',
                 icon: Icons.trending_up_rounded,

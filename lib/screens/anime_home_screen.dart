@@ -9,6 +9,7 @@ import '../services/anilist_service.dart';
 import '../services/theme_service.dart';
 import '../widgets/ad_banner.dart';
 import 'anime_detail_screen.dart';
+import '../widgets/history_row.dart';
 
 class AnimeHomeScreen extends StatefulWidget {
   const AnimeHomeScreen({super.key});
@@ -117,7 +118,7 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AnimeDetailScreen(id: anime.id),
+        builder: (_) => AnimeDetailScreen(id: anime.id, initialAnime: anime),
       ),
     );
   }
@@ -172,6 +173,7 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
             _buildHeroCarousel(t),
             const SizedBox(height: 8),
             const AdBannerContainer(),
+            const HistoryRow(mediaTypeFilter: 'anime'),
             const SizedBox(height: 8),
             _buildAnimeSection('Trending Anime', Icons.trending_up, _trending),
             _buildAnimeSection('Popular Anime', Icons.local_fire_department, _popular, !_chunk2Loaded),

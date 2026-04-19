@@ -4,11 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../services/theme_service.dart';
+import '../services/history_service.dart';
 
 class AnimePlayerScreen extends StatefulWidget {
   final int anilistId;
   final int episode;
   final String title;
+  final String? posterPath;
   final int totalEpisodes;
   final bool isMovie;
 
@@ -17,6 +19,7 @@ class AnimePlayerScreen extends StatefulWidget {
     required this.anilistId,
     required this.episode,
     required this.title,
+    this.posterPath,
     required this.totalEpisodes,
     this.isMovie = false,
   });
@@ -112,6 +115,17 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
     ]);
     _currentEpisode = widget.episode;
     _initWebView();
+    _recordHistory();
+  }
+
+  void _recordHistory() {
+    HistoryService.instance.record(
+      id: widget.anilistId,
+      title: widget.title,
+      posterPath: widget.posterPath,
+      mediaType: 'anime',
+      episode: widget.isMovie ? null : _currentEpisode,
+    );
   }
 
   void _initWebView() {
@@ -154,6 +168,7 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
     if (!mounted) return;
     setState(() { _loading = true; _hasError = false; });
     _controller.loadRequest(Uri.parse(_url));
+    _recordHistory();
   }
 
   @override

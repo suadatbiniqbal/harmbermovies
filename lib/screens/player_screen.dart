@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../services/theme_service.dart';
+import '../services/history_service.dart';
 
 class PlayerScreen extends StatefulWidget {
   final int id;
@@ -11,6 +12,7 @@ class PlayerScreen extends StatefulWidget {
   final int season;
   final int episode;
   final String title;
+  final String? posterPath;
   final int? totalEpisodes;
   final int? totalSeasons;
 
@@ -21,6 +23,7 @@ class PlayerScreen extends StatefulWidget {
     this.season = 1,
     this.episode = 1,
     this.title = '',
+    this.posterPath,
     this.totalEpisodes,
     this.totalSeasons,
   });
@@ -135,6 +138,18 @@ class _PlayerScreenState extends State<PlayerScreen>
     _currentEpisode = widget.episode;
     _currentSeason = widget.season;
     _initWebView();
+    _recordHistory();
+  }
+
+  void _recordHistory() {
+    HistoryService.instance.record(
+      id: widget.id,
+      title: widget.title,
+      posterPath: widget.posterPath,
+      mediaType: widget.isTV ? 'tv' : 'movie',
+      season: widget.isTV ? _currentSeason : null,
+      episode: widget.isTV ? _currentEpisode : null,
+    );
   }
 
   void _initWebView() {
@@ -180,6 +195,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     if (!mounted) return;
     setState(() { _loading = true; _hasError = false; });
     _controller.loadRequest(Uri.parse(_url));
+    _recordHistory();
   }
 
   @override

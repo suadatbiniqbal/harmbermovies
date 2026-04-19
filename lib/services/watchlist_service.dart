@@ -24,6 +24,7 @@ class WatchlistService extends ChangeNotifier {
         })
         .whereType<Movie>()
         .toList();
+    notifyListeners();
   }
 
   Future<void> _save() async {

@@ -261,7 +261,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
-                                  PlayerScreen(id: m.id, title: m.title),
+                                  PlayerScreen(id: m.id, title: m.title, posterPath: m.posterUrl),
                             ),
                           ),
                           icon: const Icon(Icons.play_arrow_rounded, size: 24),

@@ -94,7 +94,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                                 if (m.mediaType == 'anime') {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (_) => AnimeDetailScreen(id: m.id)),
+                                    MaterialPageRoute(builder: (_) => AnimeDetailScreen(id: m.id, initialMovie: m)),
                                   );
                                 } else {
                                   Navigator.push(
@@ -186,8 +186,8 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                                                 decoration: BoxDecoration(
                                                   gradient: LinearGradient(
                                                     colors: [
-                                                      m.mediaType == 'anime' ? Colors.deepPurpleAccent : t.accent,
-                                                      (m.mediaType == 'anime' ? Colors.deepPurpleAccent : t.accent)
+                                                      m.mediaType == 'anime' ? const Color.fromARGB(255, 198, 198, 198) : t.accent,
+                                                      (m.mediaType == 'anime' ? const Color.fromARGB(255, 58, 103, 238) : t.accent)
                                                           .withValues(alpha: 0.8),
                                                     ],
                                                   ),

@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../models/anime.dart';
+import '../models/movie.dart';
 import '../services/anilist_service.dart';
 import '../services/theme_service.dart';
 import '../services/watchlist_service.dart';
@@ -13,7 +14,9 @@ import 'image_viewer_screen.dart';
 
 class AnimeDetailScreen extends StatefulWidget {
   final int id;
-  const AnimeDetailScreen({super.key, required this.id});
+  final Anime? initialAnime;
+  final Movie? initialMovie;
+  const AnimeDetailScreen({super.key, required this.id, this.initialAnime, this.initialMovie});
 
   @override
   State<AnimeDetailScreen> createState() => _AnimeDetailScreenState();
@@ -28,15 +31,32 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialAnime != null) {
+      _anime = widget.initialAnime;
+      _loading = false;
+    } else if (widget.initialMovie != null) {
+      _anime = Anime(
+        id: widget.initialMovie!.id,
+        title: widget.initialMovie!.title,
+        coverImage: widget.initialMovie!.posterPath,
+        bannerImage: widget.initialMovie!.backdropPath,
+        averageScore: widget.initialMovie!.voteAverage,
+        year: int.tryParse(widget.initialMovie!.year),
+        description: widget.initialMovie!.overview,
+      );
+      _loading = false;
+    }
     _loadData();
   }
 
   Future<void> _loadData() async {
     if (!mounted) return;
-    setState(() {
-      _loading = true;
-      _hasError = false;
-    });
+    if (_anime == null) {
+      setState(() {
+        _loading = true;
+        _hasError = false;
+      });
+    }
     try {
       final a = await _api.getAnimeDetails(widget.id);
       if (!mounted) return;
@@ -68,6 +88,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
           anilistId: widget.id,
           episode: episode,
           title: _anime!.title,
+          posterPath: _anime!.coverImage,
           totalEpisodes: _anime!.episodes ?? episode,
           isMovie: _anime!.format == 'MOVIE',
         ),

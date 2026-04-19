@@ -104,6 +104,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
           season: season,
           episode: episode,
           title: s.title,
+          posterPath: s.posterUrl,
           totalEpisodes: _episodes.length,
           totalSeasons: _seasons.length,
         ),

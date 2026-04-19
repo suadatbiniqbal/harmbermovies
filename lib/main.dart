@@ -7,6 +7,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'services/theme_service.dart';
 import 'services/watchlist_service.dart';
+import 'services/history_service.dart';
 import 'services/fcm_service.dart';
 import 'screens/splash_screen.dart';
 
@@ -20,6 +21,7 @@ void main() async {
   // Init local services
   await ThemeService.instance.init();
   await WatchlistService.instance.init();
+  await HistoryService.instance.init();
 
   // Load ISP config for TMDB
   // (Removed due to Jio DoH removal)
