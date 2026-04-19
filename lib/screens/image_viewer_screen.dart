@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -52,6 +52,26 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
 
     try {
       final url = widget.images[_currentIndex];
+      
+      if (kIsWeb) {
+        // On Web, we can't save to the file system directly like this.
+        // For now, we'll just show a message or use a web-specific way if needed.
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Downloading is not supported in the web version.',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              backgroundColor: Colors.orange.shade800,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+        setState(() => _downloading = false);
+        return;
+      }
+
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {

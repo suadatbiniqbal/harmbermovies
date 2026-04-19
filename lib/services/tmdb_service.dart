@@ -30,8 +30,8 @@ class TmdbService {
       msg: "Loading is slow. Maybe you have Jio SIM or poor internet? Please try another network.",
       toastLength: Toast.LENGTH_LONG,
       gravity: ToastGravity.BOTTOM,
-      backgroundColor: const Color(0xFFE53935),
-      textColor: Colors.white,
+      backgroundColor: Colors.white,
+      textColor: const Color(0xFF121212),
       fontSize: 13.0,
     );
   }

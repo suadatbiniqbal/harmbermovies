@@ -144,26 +144,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               ),
             ),
             actions: [
-              ListenableBuilder(
-                listenable: wl,
-                builder: (_, __) => GestureDetector(
-                  onTap: () => wl.toggle(m),
-                  child: Container(
-                    margin: const EdgeInsets.all(8),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      wl.isInWatchlist(m.id)
-                          ? Icons.bookmark_rounded
-                          : Icons.bookmark_border_rounded,
-                      color: wl.isInWatchlist(m.id) ? t.accent : Colors.white,
-                    ),
-                  ),
-                ),
-              ),
+              // Watchlist icon removed from here, moved next to Watch Now
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
@@ -272,31 +253,56 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Watch Now button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              PlayerScreen(id: m.id, title: m.title),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  PlayerScreen(id: m.id, title: m.title),
+                            ),
+                          ),
+                          icon: const Icon(Icons.play_arrow_rounded, size: 24),
+                          label: Text('Watch Now',
+                              style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w700, fontSize: 16)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
                         ),
                       ),
-                      icon: const Icon(Icons.play_arrow_rounded, size: 24),
-                      label: Text('Watch Now',
-                          style: GoogleFonts.inter(
-                              fontWeight: FontWeight.w700, fontSize: 16)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
+                      const SizedBox(width: 12),
+                      ListenableBuilder(
+                        listenable: wl,
+                        builder: (context, _) {
+                          final isInWatchlist = wl.isInWatchlist(m.id);
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: t.surface2,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: isInWatchlist ? t.accent : Colors.transparent),
+                            ),
+                            child: IconButton(
+                              onPressed: () => wl.toggle(m),
+                              icon: Icon(
+                                isInWatchlist ? Icons.bookmark_rounded : Icons.bookmark_add_outlined,
+                                color: isInWatchlist ? t.accent : t.text,
+                              ),
+                              tooltip: isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist',
+                            ),
+                          );
+                        },
                       ),
-                    ),
+                    ],
                   ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
                   const SizedBox(height: 16),
 

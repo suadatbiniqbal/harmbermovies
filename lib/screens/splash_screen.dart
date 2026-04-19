@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -37,30 +36,36 @@ class _SplashScreenState extends State<SplashScreen>
   bool _hasError = false;
 
   Future<void> _startSplash() async {
-    final hasInternet = await _checkConnectionRecursive();
-    
-    if (hasInternet) {
-      if (mounted) _navigateToApp();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Text('Starting Harmber...', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            ],
+          ),
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255).withValues(alpha: 0.9),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.only(bottom: 30, left: 20, right: 20),
+          elevation: 0,
+        ),
+      );
     }
-  }
 
-  Future<bool> _checkConnectionRecursive() async {
-    if (!mounted) return false;
-    setState(() => _hasError = false);
+    await Future.delayed(const Duration(milliseconds: 1400));
     
-    try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 3));
-      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        return true;
-      }
-    } catch (_) {}
-
-    if (!mounted) return false;
-    setState(() => _hasError = true);
-    
-    await Future.delayed(const Duration(seconds: 3));
-    return _checkConnectionRecursive();
+    if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      _navigateToApp();
+    }
   }
 
   void _navigateToApp() {
@@ -131,13 +136,17 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 )
                     .animate()
-                    .fadeIn(duration: 800.ms, curve: Curves.easeOut)
+                    .fadeIn(duration: 400.ms, curve: Curves.easeOut)
                     .scale(
                       begin: const Offset(0.3, 0.3),
                       end: const Offset(1.0, 1.0),
-                      duration: 1000.ms,
+                      duration: 800.ms,
                       curve: Curves.elasticOut,
-                    ),
+                    )
+                    .then()
+                    .shakeX(amount: 2, duration: 400.ms)
+                    .then()
+                    .shimmer(duration: 800.ms, color: Colors.white24),
 
                 const SizedBox(height: 32),
 

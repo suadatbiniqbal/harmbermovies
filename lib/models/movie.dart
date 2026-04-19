@@ -49,15 +49,23 @@ class Movie {
     this.spokenLanguages = const [],
   });
 
-  String get posterUrl =>
-      posterPath != null ? 'https://image.tmdb.org/t/p/w500$posterPath' : '';
+  String get posterUrl {
+    if (posterPath == null || posterPath!.isEmpty) return '';
+    if (posterPath!.startsWith('http')) return posterPath!;
+    return 'https://image.tmdb.org/t/p/w500$posterPath';
+  }
 
-  String get backdropUrl => backdropPath != null
-      ? 'https://image.tmdb.org/t/p/original$backdropPath'
-      : '';
+  String get backdropUrl {
+    if (backdropPath == null || backdropPath!.isEmpty) return '';
+    if (backdropPath!.startsWith('http')) return backdropPath!;
+    return 'https://image.tmdb.org/t/p/original$backdropPath';
+  }
 
-  String get logoUrl =>
-      logoPath != null ? 'https://image.tmdb.org/t/p/w500$logoPath' : '';
+  String get logoUrl {
+    if (logoPath == null || logoPath!.isEmpty) return '';
+    if (logoPath!.startsWith('http')) return logoPath!;
+    return 'https://image.tmdb.org/t/p/w500$logoPath';
+  }
 
   String get year => releaseDate != null && releaseDate!.length >= 4
       ? releaseDate!.substring(0, 4)

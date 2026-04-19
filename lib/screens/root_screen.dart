@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/theme_service.dart';
 import 'home_screen.dart';
+import 'anime_home_screen.dart';
 import 'search_screen.dart';
 import 'watchlist_screen.dart';
 import 'settings_screen.dart';
@@ -19,6 +20,7 @@ class _RootScreenState extends State<RootScreen> {
 
   final _screens = const [
     HomeScreen(),
+    AnimeHomeScreen(),
     SearchScreen(),
     WatchlistScreen(),
     SettingsScreen(),
@@ -87,10 +89,22 @@ class _RootScreenState extends State<RootScreen> {
                   label: 'Home',
                 ),
                 NavigationDestination(
+                  icon: Icon(Icons.animation_rounded, color: t.textMuted),
+                  selectedIcon: Icon(Icons.animation_rounded,
+                          color: t.isDark ? Colors.white : Colors.black)
+                      .animate(target: _index == 1 ? 1 : 0)
+                      .scale(
+                        begin: const Offset(0.8, 0.8),
+                        end: const Offset(1.0, 1.0),
+                        duration: 200.ms,
+                      ),
+                  label: 'Anime',
+                ),
+                NavigationDestination(
                   icon: Icon(Icons.search_rounded, color: t.textMuted),
                   selectedIcon: Icon(Icons.search_rounded,
                           color: t.isDark ? Colors.white : Colors.black)
-                      .animate(target: _index == 1 ? 1 : 0)
+                      .animate(target: _index == 2 ? 1 : 0)
                       .scale(
                         begin: const Offset(0.8, 0.8),
                         end: const Offset(1.0, 1.0),
@@ -102,7 +116,7 @@ class _RootScreenState extends State<RootScreen> {
                   icon: Icon(Icons.bookmark_border_rounded, color: t.textMuted),
                   selectedIcon: Icon(Icons.bookmark_rounded,
                           color: t.isDark ? Colors.white : Colors.black)
-                      .animate(target: _index == 2 ? 1 : 0)
+                      .animate(target: _index == 3 ? 1 : 0)
                       .scale(
                         begin: const Offset(0.8, 0.8),
                         end: const Offset(1.0, 1.0),
@@ -114,7 +128,7 @@ class _RootScreenState extends State<RootScreen> {
                   icon: Icon(Icons.settings_outlined, color: t.textMuted),
                   selectedIcon: Icon(Icons.settings_rounded,
                           color: t.isDark ? Colors.white : Colors.black)
-                      .animate(target: _index == 3 ? 1 : 0)
+                      .animate(target: _index == 4 ? 1 : 0)
                       .scale(
                         begin: const Offset(0.8, 0.8),
                         end: const Offset(1.0, 1.0),

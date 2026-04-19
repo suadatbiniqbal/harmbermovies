@@ -7,6 +7,7 @@ import '../services/watchlist_service.dart';
 import '../widgets/ad_banner.dart';
 import 'movie_detail_screen.dart';
 import 'tv_detail_screen.dart';
+import 'anime_detail_screen.dart';
 
 class WatchlistScreen extends StatefulWidget {
   const WatchlistScreen({super.key});
@@ -89,14 +90,23 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                           itemBuilder: (_, i) {
                             final m = items[i];
                             return GestureDetector(
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => m.isTV
-                                      ? TVDetailScreen(id: m.id)
-                                      : MovieDetailScreen(id: m.id),
-                                ),
-                              ),
+                              onTap: () {
+                                if (m.mediaType == 'anime') {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => AnimeDetailScreen(id: m.id)),
+                                  );
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => m.isTV
+                                          ? TVDetailScreen(id: m.id)
+                                          : MovieDetailScreen(id: m.id),
+                                    ),
+                                  );
+                                }
+                              },
                               onLongPress: () => _showRemoveSheet(m.id, t),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +174,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                                             ),
                                           ),
                                           // TV badge
-                                          if (m.isTV)
+                                          if (m.isTV || m.mediaType == 'anime')
                                             Positioned(
                                               top: 6,
                                               left: 6,
@@ -176,16 +186,16 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                                                 decoration: BoxDecoration(
                                                   gradient: LinearGradient(
                                                     colors: [
-                                                      t.accent,
-                                                      t.accent.withValues(
-                                                          alpha: 0.8),
+                                                      m.mediaType == 'anime' ? Colors.deepPurpleAccent : t.accent,
+                                                      (m.mediaType == 'anime' ? Colors.deepPurpleAccent : t.accent)
+                                                          .withValues(alpha: 0.8),
                                                     ],
                                                   ),
                                                   borderRadius:
                                                       BorderRadius.circular(
                                                           5),
                                                 ),
-                                                child: Text('TV',
+                                                child: Text(m.mediaType == 'anime' ? 'ANIME' : 'TV',
                                                     style: GoogleFonts.inter(
                                                         color: Colors.white,
                                                         fontSize: 9,

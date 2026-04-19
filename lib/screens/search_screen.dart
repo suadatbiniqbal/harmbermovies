@@ -4,11 +4,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/movie.dart';
+import '../models/anime.dart';
 import '../services/tmdb_service.dart';
+import '../services/anilist_service.dart';
 import '../services/theme_service.dart';
 import '../widgets/ad_banner.dart';
 import 'movie_detail_screen.dart';
 import 'tv_detail_screen.dart';
+import 'anime_detail_screen.dart';
 import 'artists_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -26,7 +29,7 @@ class _SearchScreenState extends State<SearchScreen>
   final _controller = TextEditingController();
   final _api = TmdbService.instance;
   Timer? _debounce;
-  List<Movie> _results = [];
+  List<dynamic> _results = [];
   List<Genre> _genres = [];
   bool _searching = false;
   bool _loadingGenres = true;
@@ -122,10 +125,13 @@ class _SearchScreenState extends State<SearchScreen>
     setState(() => _searching = true);
     _debounce = Timer(const Duration(milliseconds: 250), () async {
       try {
-        final results = await _api.searchMulti(term);
+        final res = await Future.wait([
+          _api.searchMulti(term),
+          AnilistService.instance.searchAnime(term),
+        ]);
         if (!mounted || _controller.text.trim() != term) return;
         setState(() {
-          _results = results;
+          _results = [...res[0] as List<Movie>, ...res[1] as List<Anime>];
           _searching = false;
         });
       } catch (_) {
@@ -273,14 +279,32 @@ class _SearchScreenState extends State<SearchScreen>
       ),
       itemCount: _results.length,
       itemBuilder: (_, i) {
-        final m = _results[i];
+        final dynamic m = _results[i];
+        final bool isAnime = m is Anime;
+        final bool isPerson = !isAnime && m.mediaType == 'person';
+        final bool isTV = !isAnime && m.isTV;
+        
+        final String title = isAnime ? m.title : m.title;
+        final String imageUrl = isAnime ? (m.coverImage ?? '') : m.posterUrl;
+        
+        String subtitle = '';
+        if (isAnime) subtitle = m.year?.toString() ?? 'Anime';
+        else if (isPerson) subtitle = 'Actor';
+        else subtitle = m.year;
+
+        String badgeText = '';
+        if (isAnime) badgeText = 'ANIME';
+        else if (isPerson) badgeText = 'PERSON';
+        else if (isTV) badgeText = 'TV';
+
         return GestureDetector(
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) {
-                if (m.mediaType == 'person') return ArtistScreen(id: m.id);
-                if (m.isTV) return TVDetailScreen(id: m.id);
+                if (isAnime) return AnimeDetailScreen(id: m.id);
+                if (isPerson) return ArtistScreen(id: m.id);
+                if (isTV) return TVDetailScreen(id: m.id);
                 return MovieDetailScreen(id: m.id);
               },
             ),
@@ -305,9 +329,9 @@ class _SearchScreenState extends State<SearchScreen>
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        m.posterUrl.isNotEmpty
+                        imageUrl.isNotEmpty
                             ? CachedNetworkImage(
-                                imageUrl: m.posterUrl,
+                                imageUrl: imageUrl,
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 placeholder: (_, __) =>
@@ -317,9 +341,9 @@ class _SearchScreenState extends State<SearchScreen>
                               )
                             : Container(
                                 color: t.surface2,
-                                child: Icon(m.mediaType == 'person' ? Icons.person : Icons.movie, color: t.textMuted),
+                                child: Icon(isPerson ? Icons.person : Icons.movie, color: t.textMuted),
                               ),
-                        if (m.isTV || m.mediaType == 'person')
+                        if (badgeText.isNotEmpty)
                           Positioned(
                             top: 6,
                             left: 6,
@@ -332,7 +356,7 @@ class _SearchScreenState extends State<SearchScreen>
                                 ),
                                 borderRadius: BorderRadius.circular(5),
                               ),
-                              child: Text(m.mediaType == 'person' ? 'PERSON' : 'TV',
+                              child: Text(badgeText,
                                   style: GoogleFonts.inter(
                                       color: Colors.white,
                                       fontSize: 9,
@@ -346,14 +370,14 @@ class _SearchScreenState extends State<SearchScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                m.title,
+                title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
                     color: t.text, fontSize: 12, fontWeight: FontWeight.w600),
               ),
               Text(
-                m.mediaType == 'person' ? 'Actor' : m.year,
+                subtitle,
                 style: GoogleFonts.inter(color: t.textMuted, fontSize: 11),
               ),
             ],

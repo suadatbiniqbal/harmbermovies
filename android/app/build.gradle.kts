@@ -8,7 +8,7 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-//  Load keystore properties
+
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 
@@ -38,7 +38,7 @@ android {
         versionName = flutter.versionName
     }
 
-    //  Signing config
+    
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String

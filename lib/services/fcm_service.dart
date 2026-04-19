@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_core/firebase_core.dart';
+import '../firebase_options.dart';
 
 class FcmService {
   static final FcmService instance = FcmService._();
@@ -76,5 +78,11 @@ class FcmService {
 // Background message handler (must be top-level function)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('FCM background: ${message.notification?.title}');
+  try {
+    // Required to be initialized in the background isolate
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform); 
+    debugPrint('FCM background: ${message.notification?.title}');
+  } catch (e) {
+    debugPrint('FCM background init error: $e');
+  }
 }

@@ -192,24 +192,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
               ),
             ),
             actions: [
-              ListenableBuilder(
-                listenable: wl,
-                builder: (_, __) => GestureDetector(
-                  onTap: () => wl.toggle(s),
-                  child: Container(
-                    margin: const EdgeInsets.all(8),
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                        color: Colors.black45, shape: BoxShape.circle),
-                    child: Icon(
-                      wl.isInWatchlist(s.id)
-                          ? Icons.bookmark_rounded
-                          : Icons.bookmark_border_rounded,
-                      color: wl.isInWatchlist(s.id) ? t.accent : Colors.white,
-                    ),
-                  ),
-                ),
-              ),
+              // Watchlist icon removed from here, moved next to Watch Now
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
@@ -302,28 +285,53 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Watch Now button (plays S1 E1)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _playEpisode(
-                        _seasons.isNotEmpty ? _seasons.first.seasonNumber : 1,
-                        1,
-                      ),
-                      icon: const Icon(Icons.play_arrow_rounded, size: 24),
-                      label: Text('Watch Now',
-                          style: GoogleFonts.inter(
-                              fontWeight: FontWeight.w700, fontSize: 16)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _playEpisode(
+                            _seasons.isNotEmpty ? _seasons.first.seasonNumber : 1,
+                            1,
+                          ),
+                          icon: const Icon(Icons.play_arrow_rounded, size: 24),
+                          label: Text('Watch Now',
+                              style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w700, fontSize: 16)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
                         ),
-                        elevation: 0,
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      ListenableBuilder(
+                        listenable: wl,
+                        builder: (context, _) {
+                          final isInWatchlist = wl.isInWatchlist(s.id);
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: t.surface2,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: isInWatchlist ? t.accent : Colors.transparent),
+                            ),
+                            child: IconButton(
+                              onPressed: () => wl.toggle(s),
+                              icon: Icon(
+                                isInWatchlist ? Icons.bookmark_rounded : Icons.bookmark_add_outlined,
+                                color: isInWatchlist ? t.accent : t.text,
+                              ),
+                              tooltip: isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist',
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
                   const SizedBox(height: 16),
                   

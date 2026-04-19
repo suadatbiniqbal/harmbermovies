@@ -1,58 +1,43 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../models/movie.dart';
-import '../services/tmdb_service.dart';
+import '../models/anime.dart';
+import '../services/anilist_service.dart';
 import '../services/theme_service.dart';
-import '../services/update_service.dart';
-import '../widgets/section_row.dart';
 import '../widgets/ad_banner.dart';
-import 'movie_detail_screen.dart';
-import 'tv_detail_screen.dart';
+import 'anime_detail_screen.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class AnimeHomeScreen extends StatefulWidget {
+  const AnimeHomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<AnimeHomeScreen> createState() => _AnimeHomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
+class _AnimeHomeScreenState extends State<AnimeHomeScreen>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
-  final _api = TmdbService.instance;
+  final _api = AnilistService.instance;
   final _scrollController = ScrollController();
-  List<Movie> _trending = [];
-  List<Movie> _popular = [];
-  List<Movie> _topRated = [];
-  List<Movie> _nowPlaying = [];
-  List<Movie> _upcoming = [];
-  List<Movie> _popularTV = [];
-  List<Movie> _airingToday = [];
-  List<Movie> _topRatedTV = [];
+  List<Anime> _trending = [];
+  List<Anime> _popular = [];
+  List<Anime> _topRated = [];
   bool _loading = true;
   bool _hasError = false;
   int _heroIndex = 0;
   bool _isScrolled = false;
   bool _chunk2Loaded = false;
-  bool _chunk3Loaded = false;
   bool _isLoadingChunk2 = false;
-  bool _isLoadingChunk3 = false;
 
   @override
   void initState() {
     super.initState();
     _loadData();
-    _checkUpdate();
-    _checkDiscordPromo();
     _scrollController.addListener(_onScroll);
   }
 
@@ -73,88 +58,6 @@ class _HomeScreenState extends State<HomeScreen>
     if (_scrollController.offset > 100 && !_chunk2Loaded && !_isLoadingChunk2) {
       _loadChunk2();
     }
-    
-    if (_scrollController.offset > 400 && !_chunk3Loaded && !_isLoadingChunk3) {
-      _loadChunk3();
-    }
-  }
-
-  Future<void> _checkUpdate() async {
-    final updateData = await UpdateService.checkForUpdate();
-    if (updateData != null && mounted) {
-      final apkUrl = UpdateService.getApkUrl(updateData);
-      final releaseNotes = updateData['body'] as String? ?? 'A new version of Harmber Movies is available.';
-      
-      if (apkUrl != null) {
-        showCupertinoDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => PopScope(
-            canPop: false,
-            child: CupertinoAlertDialog(
-              title: const Text('New Update Available!'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Please update to continue enjoying the app.'),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      releaseNotes,
-                      style: const TextStyle(fontSize: 12),
-                      maxLines: 8,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                CupertinoDialogAction(
-                  isDefaultAction: true,
-                  onPressed: () {
-                    launchUrl(Uri.parse(apkUrl), mode: LaunchMode.externalApplication);
-                  },
-                  child: const Text('Update Now'),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-    }
-  }
-
-  void _checkDiscordPromo() {
-    if (Random().nextDouble() < 0.25) {
-      Future.delayed(const Duration(seconds: 4), () {
-        if (!mounted) return;
-        showCupertinoDialog(
-          context: context,
-          builder: (context) => CupertinoAlertDialog(
-            title: const Text('Join Our Community!'),
-            content: const Text(
-                'Connect with other movie fans, request features, and stay up to date on our Discord server!'),
-            actions: [
-              CupertinoDialogAction(
-                isDestructiveAction: true,
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Later'),
-              ),
-              CupertinoDialogAction(
-                isDefaultAction: true,
-                onPressed: () {
-                  Navigator.pop(context);
-                  launchUrl(Uri.parse('https://discord.gg/BMTnet53E6'),
-                      mode: LaunchMode.externalApplication);
-                },
-                child: const Text('Let\'s Go!'),
-              ),
-            ],
-          ),
-        );
-      });
-    }
   }
 
   Future<void> _loadData() async {
@@ -163,28 +66,13 @@ class _HomeScreenState extends State<HomeScreen>
       _loading = true;
       _hasError = false;
       _chunk2Loaded = false;
-      _chunk3Loaded = false;
       _isLoadingChunk2 = false;
-      _isLoadingChunk3 = false;
       _popular = [];
       _topRated = [];
-      _nowPlaying = [];
-      _upcoming = [];
-      _popularTV = [];
-      _airingToday = [];
-      _topRatedTV = [];
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please wait, loading data...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-
     try {
-      // Chunk 1: Hero & Trending (Crucial for first paint)
-      final trending = await _api.getTrending();
+      final trending = await _api.getTrendingAnime();
       if (trending.isEmpty) throw Exception('Network failed');
       
       if (!mounted) return;
@@ -193,10 +81,6 @@ class _HomeScreenState extends State<HomeScreen>
         _loading = false;
       });
 
-      // Background logo fetch for heroes
-      _fetchHeroLogos(trending.take(6).toList());
-
-      // Start chunk 2 straight away to be faster
       _loadChunk2();
 
     } catch (e) {
@@ -214,8 +98,8 @@ class _HomeScreenState extends State<HomeScreen>
     setState(() => _isLoadingChunk2 = true);
     try {
       final nextChunk = await Future.wait([
-        _api.getPopularMovies(),
-        _api.getTopRatedMovies(),
+        _api.getPopularAnime(),
+        _api.getTopRatedAnime(),
       ]);
       if (!mounted) return;
       setState(() {
@@ -229,56 +113,11 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  Future<void> _loadChunk3() async {
-    if (_isLoadingChunk3 || _chunk3Loaded) return;
-    setState(() => _isLoadingChunk3 = true);
-    try {
-      final finalChunk = await Future.wait([
-        _api.getNowPlaying(),
-        _api.getUpcoming(),
-        _api.getPopularTV(),
-        _api.getAiringToday(),
-        _api.getTopRatedTV(),
-      ]);
-      if (!mounted) return;
-      setState(() {
-        _nowPlaying = finalChunk[0];
-        _upcoming = finalChunk[1];
-        _popularTV = finalChunk[2];
-        _airingToday = finalChunk[3];
-        _topRatedTV = finalChunk[4];
-        _chunk3Loaded = true;
-        _isLoadingChunk3 = false;
-      });
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingChunk3 = false);
-    }
-  }
-
-  Future<void> _fetchHeroLogos(List<Movie> heroItems) async {
-    try {
-      final logoPathResults = await Future.wait(
-          heroItems.map((m) => _api.getLogoPath(m.id, isTV: m.isTV)));
-          
-      if (!mounted) return;
-      setState(() {
-        _trending = _trending.asMap().entries.map((entry) {
-          if (entry.key < 6 && entry.key < logoPathResults.length) {
-            return entry.value.copyWith(logoPath: logoPathResults[entry.key]);
-          }
-          return entry.value;
-        }).toList();
-      });
-    } catch (_) {}
-  }
-
-  void _navigateToDetail(Movie movie) {
+  void _navigateToDetail(Anime anime) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => movie.isTV
-            ? TVDetailScreen(id: movie.id)
-            : MovieDetailScreen(id: movie.id),
+        builder: (_) => AnimeDetailScreen(id: anime.id),
       ),
     );
   }
@@ -286,7 +125,10 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final t = ThemeService.instance;
+    return ListenableBuilder(
+      listenable: ThemeService.instance,
+      builder: (context, _) {
+        final t = ThemeService.instance;
 
     final Widget content;
 
@@ -300,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen>
             Icon(Icons.wifi_off_rounded, color: t.textMuted, size: 48),
             const SizedBox(height: 16),
             Text(
-              'Failed to load data\nPlease check your connection',
+              'Failed to load Anime\nPlease check your connection',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(color: t.textMuted, fontSize: 16),
             ),
@@ -328,48 +170,14 @@ class _HomeScreenState extends State<HomeScreen>
           physics: const BouncingScrollPhysics(),
           children: [
             _buildHeroCarousel(t),
+            const SizedBox(height: 8),
             const AdBannerContainer(),
-            SectionRow(
-                title: 'Trending Now',
-                icon: Icons.trending_up_rounded,
-                movies: _trending),
-            SectionRow(
-                title: 'Popular Movies',
-                icon: Icons.local_fire_department_rounded,
-                movies: _popular,
-                isLoading: !_chunk2Loaded),
-            SectionRow(
-                title: 'Now Playing',
-                icon: Icons.play_circle_outline_rounded,
-                movies: _nowPlaying,
-                isLoading: !_chunk3Loaded),
-            SectionRow(
-                title: 'Top Rated',
-                icon: Icons.star_rounded,
-                movies: _topRated,
-                isLoading: !_chunk2Loaded),
-            SectionRow(
-                title: 'Coming Soon',
-                icon: Icons.upcoming_rounded,
-                movies: _upcoming,
-                isLoading: !_chunk3Loaded),
-            SectionRow(
-                title: 'Popular TV',
-                icon: Icons.tv_rounded,
-                movies: _popularTV,
-                isLoading: !_chunk3Loaded),
-            SectionRow(
-                title: 'Airing Today',
-                icon: Icons.live_tv_rounded,
-                movies: _airingToday,
-                isLoading: !_chunk3Loaded),
-            SectionRow(
-                title: 'Top Rated TV',
-                icon: Icons.emoji_events_rounded,
-                movies: _topRatedTV,
-                isLoading: !_chunk3Loaded),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            _buildAnimeSection('Trending Anime', Icons.trending_up, _trending),
+            _buildAnimeSection('Popular Anime', Icons.local_fire_department, _popular, !_chunk2Loaded),
             const AdBannerContainer(),
+            const SizedBox(height: 8),
+            _buildAnimeSection('Top Rated Anime', Icons.star_rounded, _topRated, !_chunk2Loaded),
             const SizedBox(height: 60),
           ],
         ),
@@ -440,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               const SizedBox(width: 10),
               Text(
-                'Harmber Movies',
+                'Harmber Anime',
                 style: GoogleFonts.inter(
                   color: _isScrolled && !t.isDark ? Colors.black87 : Colors.white,
                   fontSize: 20,
@@ -461,6 +269,121 @@ class _HomeScreenState extends State<HomeScreen>
         ),
       ),
       body: content,
+    );
+      },
+    );
+  }
+
+  Widget _buildAnimeSection(String title, IconData icon, List<Anime> animeList, [bool isLoading = false]) {
+    final t = ThemeService.instance;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Row(
+            children: [
+              Icon(icon, color: t.accent, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  color: t.text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 220,
+          child: isLoading || animeList.isEmpty
+              ? _buildHorizontalShimmer(t)
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: animeList.length,
+                  itemBuilder: (_, i) => _buildAnimeCard(animeList[i], t),
+                ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildAnimeCard(Anime anime, ThemeService t) {
+    return GestureDetector(
+      onTap: () => _navigateToDetail(anime),
+      child: Container(
+        width: 140,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: CachedNetworkImage(
+                      imageUrl: anime.coverImage ?? '',
+                      width: 140,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(color: t.surface2),
+                      errorWidget: (_, __, ___) => Container(
+                        color: t.surface2,
+                        child: Icon(Icons.broken_image_rounded, color: t.textMuted),
+                      ),
+                    ),
+                  ),
+                  if (anime.averageScore != null)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 12),
+                            const SizedBox(width: 3),
+                            Text(
+                              anime.averageScore!.toStringAsFixed(1),
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              anime.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                color: t.text,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -484,7 +407,6 @@ class _HomeScreenState extends State<HomeScreen>
           itemBuilder: (_, i, __) => _buildHeroItem(heroes[i], t, i),
         ),
         
-        // Page indicators
         Positioned(
           bottom: 20,
           left: 0,
@@ -513,24 +435,21 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildHeroItem(Movie movie, ThemeService t, int index) {
+  Widget _buildHeroItem(Anime anime, ThemeService t, int index) {
     return GestureDetector(
-      onTap: () => _navigateToDetail(movie),
+      onTap: () => _navigateToDetail(anime),
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Backdrop with parallax feel
-          if (movie.backdropUrl.isNotEmpty)
+          if (anime.bannerImage != null || anime.coverImage != null)
             CachedNetworkImage(
-              imageUrl: movie.backdropUrl,
+              imageUrl: anime.bannerImage ?? anime.coverImage ?? '',
               fit: BoxFit.cover,
-              placeholder: (_, __) =>
-                  Container(color: const Color(0xFF0A0A0F)),
-              errorWidget: (_, __, ___) =>
-                  Container(color: const Color(0xFF0A0A0F)),
+              alignment: Alignment.center,
+              placeholder: (_, __) => Container(color: const Color(0xFF0A0A0F)),
+              errorWidget: (_, __, ___) => Container(color: const Color(0xFF0A0A0F)),
             ),
 
-          // Multi-layer gradient for cinematic depth
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -547,7 +466,6 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
           ),
-          // Left edge gradient
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -563,7 +481,6 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
 
-          // Content with staggered animations
           Positioned(
             left: 20,
             right: 20,
@@ -571,118 +488,77 @@ class _HomeScreenState extends State<HomeScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Rating + year + type badges
                 Row(
                   children: [
-                    _glassBadge(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star_rounded,
-                              color: Color(0xFFFFD700), size: 14),
-                          const SizedBox(width: 4),
-                          Text(movie.rating,
-                              style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (movie.year != 'N/A')
+                    if (anime.averageScore != null) ...[
                       _glassBadge(
-                        child: Text(movie.year,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
+                            const SizedBox(width: 4),
+                            Text(anime.averageScore!.toStringAsFixed(1),
+                                style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    if (anime.year != null) ...[
+                      _glassBadge(
+                        child: Text(anime.year.toString(),
                             style: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600)),
                       ),
-                    if (movie.isTV) ...[
                       const SizedBox(width: 8),
+                    ],
+                    if (anime.format != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color.fromARGB(255, 4, 138, 210), Color.fromARGB(255, 25, 89, 199)],
                           ),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text('TV SERIES',
+                        child: Text(anime.format!,
                             style: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.5)),
                       ),
-                    ],
                   ],
-                )
-                    .animate()
-                    .fadeIn(delay: 100.ms, duration: 500.ms)
-                    .slideX(begin: -0.05),
+                ).animate().fadeIn(delay: 100.ms, duration: 500.ms).slideX(begin: -0.05),
 
                 const SizedBox(height: 12),
 
-                // Logo or title
-                (movie.logoUrl.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: movie.logoUrl,
-                            height: 70,
-                            width: MediaQuery.of(context).size.width * 0.65,
-                            alignment: Alignment.centerLeft,
-                            fit: BoxFit.contain,
-                            errorWidget: (_, __, ___) => _heroTitle(movie),
-                          )
-                        : _heroTitle(movie))
-                    .animate()
-                    .fadeIn(delay: 200.ms, duration: 600.ms)
-                    .slideY(begin: 0.15, curve: Curves.easeOutCubic),
-
-                const SizedBox(height: 10),
-
-                // Overview
-                if (movie.overview != null && movie.overview!.isNotEmpty)
-                  Text(
-                    movie.overview!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
-                      color: Colors.white60,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
-                      height: 1.5,
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(delay: 350.ms, duration: 500.ms),
+                _heroTitle(anime).animate().fadeIn(delay: 200.ms, duration: 600.ms).slideY(begin: 0.15, curve: Curves.easeOutCubic),
 
                 const SizedBox(height: 18),
 
-                // Action buttons
                 Row(
                   children: [
-                    // Watch button with gradient
                     _heroButton(
                       icon: Icons.play_arrow_rounded,
                       label: 'Watch Now',
                       filled: true,
-                      onTap: () => _navigateToDetail(movie),
+                      onTap: () => _navigateToDetail(anime),
                     ),
                     const SizedBox(width: 12),
-                    // Details button
                     _heroButton(
                       icon: Icons.info_outline_rounded,
                       label: 'Details',
                       filled: false,
-                      onTap: () => _navigateToDetail(movie),
+                      onTap: () => _navigateToDetail(anime),
                     ),
                   ],
-                )
-                    .animate()
-                    .fadeIn(delay: 450.ms, duration: 500.ms)
-                    .slideY(begin: 0.1),
+                ).animate().fadeIn(delay: 450.ms, duration: 500.ms).slideY(begin: 0.1),
               ],
             ),
           ),
@@ -691,9 +567,9 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _heroTitle(Movie movie) {
+  Widget _heroTitle(Anime anime) {
     return Text(
-      movie.title,
+      anime.title,
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
       style: GoogleFonts.inter(
@@ -719,15 +595,12 @@ class _HomeScreenState extends State<HomeScreen>
         decoration: BoxDecoration(
           color: filled ? Colors.white : Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
-          border: filled
-              ? null
-              : Border.all(color: Colors.white.withValues(alpha: 0.25)),
+          border: filled ? null : Border.all(color: Colors.white.withValues(alpha: 0.25)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                color: filled ? Colors.black : Colors.white, size: 20),
+            Icon(icon, color: filled ? Colors.black : Colors.white, size: 20),
             const SizedBox(width: 8),
             Text(label,
                 style: GoogleFonts.inter(
@@ -778,8 +651,8 @@ class _HomeScreenState extends State<HomeScreen>
           Container(height: 520, color: Colors.white),
           const SizedBox(height: 24),
           ...List.generate(
-            4,
-            (section) => Column(
+            3,
+            (_) => Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -797,28 +670,35 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 const SizedBox(height: 14),
-                SizedBox(
-                  height: 210,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: 5,
-                    itemBuilder: (_, __) => Container(
-                      width: 140,
-                      margin: const EdgeInsets.only(right: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                  ),
-                ),
+                _buildHorizontalShimmer(t, false),
                 const SizedBox(height: 24),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHorizontalShimmer(ThemeService t, [bool useShimmer = true]) {
+    final list = ListView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: 5,
+      itemBuilder: (_, __) => Container(
+        width: 140,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+        ),
+      ),
+    );
+    if (!useShimmer) return SizedBox(height: 210, child: list);
+    return Shimmer.fromColors(
+      baseColor: t.surface2,
+      highlightColor: t.surface,
+      child: SizedBox(height: 210, child: list),
     );
   }
 }
