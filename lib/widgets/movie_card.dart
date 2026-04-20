@@ -29,15 +29,16 @@ class _MovieCardState extends State<MovieCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _tapController;
   late Animation<double> _scaleAnim;
+  bool _pressed = false;
 
   @override
   void initState() {
     super.initState();
     _tapController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 120),
     );
-    _scaleAnim = Tween<double>(begin: 1.0, end: 0.95).animate(
+    _scaleAnim = Tween<double>(begin: 1.0, end: 0.93).animate(
       CurvedAnimation(parent: _tapController, curve: Curves.easeInOut),
     );
   }
@@ -54,9 +55,13 @@ class _MovieCardState extends State<MovieCard>
     final movie = widget.movie;
 
     return GestureDetector(
-      onTapDown: (_) => _tapController.forward(),
+      onTapDown: (_) {
+        _tapController.forward();
+        setState(() => _pressed = true);
+      },
       onTapUp: (_) {
         _tapController.reverse();
+        setState(() => _pressed = false);
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -66,7 +71,10 @@ class _MovieCardState extends State<MovieCard>
           ),
         );
       },
-      onTapCancel: () => _tapController.reverse(),
+      onTapCancel: () {
+        _tapController.reverse();
+        setState(() => _pressed = false);
+      },
       child: AnimatedBuilder(
         animation: _scaleAnim,
         builder: (_, child) => Transform.scale(
@@ -75,93 +83,72 @@ class _MovieCardState extends State<MovieCard>
         ),
         child: Container(
           width: widget.width,
-          margin: const EdgeInsets.only(right: 12),
+          margin: const EdgeInsets.only(right: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Poster with glow shadow
-              Container(
+              // ── Poster ──
+              SizedBox(
                 height: widget.height,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: t.accent.withValues(alpha: 0.15),
-                      blurRadius: 16,
-                      spreadRadius: -2,
-                      offset: const Offset(0, 8),
+                child: Stack(
+                  children: [
+                    // Main poster with shadow
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: t.accent.withValues(alpha: _pressed ? 0.25 : 0.12),
+                            blurRadius: 18,
+                            spreadRadius: -2,
+                            offset: const Offset(0, 8),
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            blurRadius: 12,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: movie.posterUrl.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: movie.posterUrl,
+                                width: widget.width,
+                                height: widget.height,
+                                fit: BoxFit.cover,
+                                placeholder: (_, __) =>
+                                    _placeholder(t),
+                                errorWidget: (_, __, ___) =>
+                                    _placeholder(t),
+                              )
+                            : _placeholder(t),
+                      ),
                     ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      movie.posterUrl.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: movie.posterUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) => _posterPlaceholder(t),
-                              errorWidget: (_, __, ___) =>
-                                  _posterPlaceholder(t),
-                            )
-                          : _posterPlaceholder(t),
 
-                      // Subtle gradient overlay at bottom
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: 60,
+                    // Bottom gradient info bar
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                            bottom: Radius.circular(16)),
                         child: Container(
+                          padding: const EdgeInsets.fromLTRB(8, 20, 8, 8),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
                               colors: [
-                                Colors.black.withValues(alpha: 0.7),
-                                Colors.black.withValues(alpha: 0.2),
+                                Colors.black.withValues(alpha: 0.85),
+                                Colors.black.withValues(alpha: 0.5),
                                 Colors.transparent,
                               ],
                             ),
                           ),
-                        ),
-                      ),
-
-                      // Glassmorphism border overlay
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // Rating badge with glassmorphism
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.2)),
-                          ),
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(Icons.star_rounded,
                                   color: Color(0xFFFFD700), size: 12),
@@ -171,54 +158,80 @@ class _MovieCardState extends State<MovieCard>
                                 style: GoogleFonts.inter(
                                   color: Colors.white,
                                   fontSize: 11,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
+                              const Spacer(),
+                              if (movie.year != 'N/A')
+                                Text(
+                                  movie.year,
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white70,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                             ],
                           ),
                         ),
                       ),
+                    ),
 
-                      // TV badge with gradient
-                      if (movie.isTV)
-                        Positioned(
-                          top: 8,
-                          left: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFF6366F1), 
-                                  Color(0xFF8B5CF6)
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(6),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
+                    // Glass border overlay
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // TV badge
+                    if (movie.isTV)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFF6366F1),
+                                Color(0xFF8B5CF6),
                               ],
                             ),
-                            child: Text(
-                              'TV',
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
+                            borderRadius: BorderRadius.circular(7),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF6366F1)
+                                    .withValues(alpha: 0.5),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
                               ),
+                            ],
+                          ),
+                          child: Text(
+                            'TV',
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
+
+              const SizedBox(height: 9),
+
               // Title
               Text(
                 movie.title,
@@ -227,17 +240,7 @@ class _MovieCardState extends State<MovieCard>
                 style: GoogleFonts.inter(
                   color: t.text,
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 2),
-              // Year
-              Text(
-                movie.year,
-                style: GoogleFonts.inter(
-                  color: t.textMuted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -250,11 +253,17 @@ class _MovieCardState extends State<MovieCard>
         .slideX(begin: 0.06, curve: Curves.easeOutCubic);
   }
 
-  Widget _posterPlaceholder(ThemeService t) {
+  Widget _placeholder(ThemeService t) {
     return Container(
-      color: t.surface2,
+      width: widget.width,
+      height: widget.height,
+      decoration: BoxDecoration(
+        color: t.surface2,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Center(
-        child: Icon(Icons.movie_outlined, color: t.textMuted, size: 32),
+        child: Icon(Icons.movie_outlined,
+            color: t.textMuted.withValues(alpha: 0.5), size: 36),
       ),
     );
   }

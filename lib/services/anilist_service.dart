@@ -14,12 +14,13 @@ class AnilistService {
   Future<void> _initCache() async {
     if (_prefs != null) return;
     _prefs = await SharedPreferences.getInstance();
-    final stored = _prefs!.getString('anilist_v2_cache');
+    final stored = _prefs!.getString('anilist_v3_cache');
     if (stored != null) {
       try {
         final map = json.decode(stored) as Map<String, dynamic>;
         map.forEach((k, v) {
-          _cache[k] = _CacheEntry(v['data'], timestamp: DateTime.parse(v['timestamp']));
+          _cache[k] = _CacheEntry(v['data'],
+              timestamp: DateTime.parse(v['timestamp']));
         });
       } catch (_) {}
     }
@@ -28,38 +29,39 @@ class AnilistService {
   void _saveCache() {
     if (_prefs == null) return;
     final map = _cache.map((k, v) => MapEntry(k, {
-      'data': v.data,
-      'timestamp': v.timestamp.toIso8601String(),
-    }));
-    _prefs!.setString('anilist_v2_cache', json.encode(map));
+          'data': v.data,
+          'timestamp': v.timestamp.toIso8601String(),
+        }));
+    _prefs!.setString('anilist_v3_cache', json.encode(map));
   }
 
-  Future<dynamic> _postQuery(String query, {Map<String, dynamic>? variables}) async {
+  Future<dynamic> _postQuery(String query,
+      {Map<String, dynamic>? variables}) async {
     for (int i = 0; i < 3; i++) {
       try {
-        final res = await http.post(
-          Uri.parse(_url),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: json.encode({
-            'query': query,
-            'variables': variables ?? {},
-          }),
-        ).timeout(const Duration(seconds: 15));
+        final res = await http
+            .post(
+              Uri.parse(_url),
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: json.encode({
+                'query': query,
+                'variables': variables ?? {},
+              }),
+            )
+            .timeout(const Duration(seconds: 15));
 
         if (res.statusCode == 200) {
           final decoded = json.decode(res.body);
-          if (decoded['errors'] != null) {
-            // Some non-critical errors might be present, but we prefer data if available
-          }
           return decoded['data'];
-        } else if (res.statusCode == 429) {
-          await Future.delayed(Duration(milliseconds: 500 * (i + 1)));
         }
-      } catch (e) {
-        if (i < 2) await Future.delayed(Duration(milliseconds: 500 * (i + 1)));
+        if (res.statusCode == 429) {
+          await Future.delayed(Duration(milliseconds: 800 * (i + 1)));
+        }
+      } catch (_) {
+        if (i < 2) await Future.delayed(Duration(milliseconds: 600 * (i + 1)));
       }
     }
     return null;
@@ -92,7 +94,9 @@ class AnilistService {
     await _initCache();
     const cacheKey = 'trending';
     if (_cache.containsKey(cacheKey) && _cache[cacheKey]!.isValid) {
-      return (_cache[cacheKey]!.data as List).map((j) => Anime.fromJson(j)).toList();
+      return (_cache[cacheKey]!.data as List)
+          .map((j) => Anime.fromJson(j))
+          .toList();
     }
 
     final query = '''
@@ -105,8 +109,16 @@ class AnilistService {
       }
     ''';
     final data = await _postQuery(query);
-    if (data == null) return [];
-    
+    if (data == null) {
+      // Return stale cache if available
+      if (_cache.containsKey(cacheKey)) {
+        return (_cache[cacheKey]!.data as List)
+            .map((j) => Anime.fromJson(j))
+            .toList();
+      }
+      return [];
+    }
+
     final results = data['Page']['media'] as List;
     _cache[cacheKey] = _CacheEntry(results);
     _saveCache();
@@ -117,7 +129,9 @@ class AnilistService {
     await _initCache();
     const cacheKey = 'popular';
     if (_cache.containsKey(cacheKey) && _cache[cacheKey]!.isValid) {
-      return (_cache[cacheKey]!.data as List).map((j) => Anime.fromJson(j)).toList();
+      return (_cache[cacheKey]!.data as List)
+          .map((j) => Anime.fromJson(j))
+          .toList();
     }
 
     final query = '''
@@ -130,8 +144,15 @@ class AnilistService {
       }
     ''';
     final data = await _postQuery(query);
-    if (data == null) return [];
-    
+    if (data == null) {
+      if (_cache.containsKey(cacheKey)) {
+        return (_cache[cacheKey]!.data as List)
+            .map((j) => Anime.fromJson(j))
+            .toList();
+      }
+      return [];
+    }
+
     final results = data['Page']['media'] as List;
     _cache[cacheKey] = _CacheEntry(results);
     _saveCache();
@@ -142,7 +163,9 @@ class AnilistService {
     await _initCache();
     const cacheKey = 'top_rated';
     if (_cache.containsKey(cacheKey) && _cache[cacheKey]!.isValid) {
-      return (_cache[cacheKey]!.data as List).map((j) => Anime.fromJson(j)).toList();
+      return (_cache[cacheKey]!.data as List)
+          .map((j) => Anime.fromJson(j))
+          .toList();
     }
 
     final query = '''
@@ -155,8 +178,15 @@ class AnilistService {
       }
     ''';
     final data = await _postQuery(query);
-    if (data == null) return [];
-    
+    if (data == null) {
+      if (_cache.containsKey(cacheKey)) {
+        return (_cache[cacheKey]!.data as List)
+            .map((j) => Anime.fromJson(j))
+            .toList();
+      }
+      return [];
+    }
+
     final results = data['Page']['media'] as List;
     _cache[cacheKey] = _CacheEntry(results);
     _saveCache();
@@ -166,8 +196,12 @@ class AnilistService {
   Future<Anime?> getAnimeDetails(int id) async {
     await _initCache();
     final cacheKey = 'details_$id';
-    if (_cache.containsKey(cacheKey) && _cache[cacheKey]!.isValid) {
-      return Anime.fromJson(_cache[cacheKey]!.data);
+
+    // Return cached immediately, always try to refresh in background
+    Anime? cached;
+    if (_cache.containsKey(cacheKey)) {
+      cached = Anime.fromJson(_cache[cacheKey]!.data);
+      if (_cache[cacheKey]!.isValid) return cached;
     }
 
     final query = '''
@@ -244,8 +278,12 @@ class AnilistService {
       }
     ''';
     final data = await _postQuery(query, variables: {'id': id});
-    if (data == null || data['Media'] == null) return null;
-    
+
+    if (data == null || data['Media'] == null) {
+      // Return stale cached data if available
+      return cached;
+    }
+
     final animeData = data['Media'];
     _cache[cacheKey] = _CacheEntry(animeData);
     _saveCache();
@@ -255,12 +293,14 @@ class AnilistService {
   Future<List<Anime>> searchAnime(String search) async {
     await _initCache();
     final cacheKey = 'search_$search';
-    if (_cache.containsKey(cacheKey) && _cache[cacheKey]!.isValid) {
-      return (_cache[cacheKey]!.data as List).map((j) => Anime.fromJson(j)).toList();
+    if (_cache.containsKey(cacheKey) && _cache[cacheKey]!.isSearchValid) {
+      return (_cache[cacheKey]!.data as List)
+          .map((j) => Anime.fromJson(j))
+          .toList();
     }
     final query = '''
       query (\$search: String) {
-        Page(page: 1, perPage: 20) {
+        Page(page: 1, perPage: 25) {
           media(search: \$search, type: ANIME, isAdult: false) {
             $_baseAnimeQuery
           }
@@ -280,7 +320,13 @@ class _CacheEntry {
   final dynamic data;
   final DateTime timestamp;
 
-  _CacheEntry(this.data, {DateTime? timestamp}) : timestamp = timestamp ?? DateTime.now();
+  _CacheEntry(this.data, {DateTime? timestamp})
+      : timestamp = timestamp ?? DateTime.now();
 
-  bool get isValid => DateTime.now().difference(timestamp).inHours < 6;
+  // 24 hours for detail/list cache
+  bool get isValid => DateTime.now().difference(timestamp).inHours < 24;
+
+  // 30 minutes for search cache
+  bool get isSearchValid =>
+      DateTime.now().difference(timestamp).inMinutes < 30;
 }

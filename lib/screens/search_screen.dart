@@ -14,6 +14,8 @@ import 'tv_detail_screen.dart';
 import 'anime_detail_screen.dart';
 import 'artists_screen.dart';
 
+enum _SearchTab { all, movies, tv, anime }
+
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
@@ -22,22 +24,23 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   @override
   bool get wantKeepAlive => true;
 
+  late TabController _tabController;
   final _controller = TextEditingController();
-  final _api = TmdbService.instance;
   Timer? _debounce;
   List<dynamic> _results = [];
   List<Genre> _genres = [];
   bool _searching = false;
   bool _loadingGenres = true;
   bool _hasError = false;
+  _SearchTab _activeTab = _SearchTab.all;
 
   static const _genreColors = [
     [Color(0xFFE50914), Color(0xFF831010)],
-    [Color(0xFF667EEA), Color(0xFF3B49DF)],
+    [Color(0xFF667EEA), Color(0xFF764BA2)],
     [Color(0xFF4CAF50), Color(0xFF2E7D32)],
     [Color(0xFFFF6B35), Color(0xFFD84315)],
     [Color(0xFF9C27B0), Color(0xFF6A1B9A)],
@@ -82,11 +85,26 @@ class _SearchScreenState extends State<SearchScreen>
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      final tabs = [
+        _SearchTab.all,
+        _SearchTab.movies,
+        _SearchTab.tv,
+        _SearchTab.anime
+      ];
+      setState(() => _activeTab = tabs[_tabController.index]);
+      if (_controller.text.trim().isNotEmpty) {
+        _triggerSearch(_controller.text.trim());
+      }
+    });
     _loadGenres();
   }
 
   @override
   void dispose() {
+    _tabController.dispose();
     _controller.dispose();
     _debounce?.cancel();
     super.dispose();
@@ -94,8 +112,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   Future<void> _loadGenres() async {
     try {
-      final genres = await _api.getMovieGenres();
-      if (genres.isEmpty) throw Exception('Network error');
+      final genres = await TmdbService.instance.getMovieGenres();
       if (!mounted) return;
       setState(() {
         _genres = genres;
@@ -123,28 +140,47 @@ class _SearchScreenState extends State<SearchScreen>
       return;
     }
     setState(() => _searching = true);
-    _debounce = Timer(const Duration(milliseconds: 250), () async {
-      try {
-        final res = await Future.wait([
-          _api.searchMulti(term),
-          AnilistService.instance.searchAnime(term),
-        ]);
-        if (!mounted || _controller.text.trim() != term) return;
-        setState(() {
-          _results = [...res[0] as List<Movie>, ...res[1] as List<Anime>];
-          _searching = false;
-        });
-      } catch (_) {
-        if (mounted && _controller.text.trim() == term) {
-          setState(() => _searching = false);
-        }
+    _debounce = Timer(const Duration(milliseconds: 300), () => _triggerSearch(term));
+  }
+
+  Future<void> _triggerSearch(String term) async {
+    if (!mounted) return;
+    setState(() => _searching = true);
+    try {
+      List<dynamic> results = [];
+      switch (_activeTab) {
+        case _SearchTab.all:
+          final r = await Future.wait([
+            TmdbService.instance.searchMulti(term),
+            AnilistService.instance.searchAnime(term),
+          ]);
+          results = [...(r[0] as List<Movie>), ...(r[1] as List<Anime>)];
+          break;
+        case _SearchTab.movies:
+          results = await TmdbService.instance.searchMovies(term);
+          break;
+        case _SearchTab.tv:
+          results = await TmdbService.instance.searchTV(term);
+          break;
+        case _SearchTab.anime:
+          results = await AnilistService.instance.searchAnime(term);
+          break;
       }
-    });
+      if (!mounted || _controller.text.trim() != term) return;
+      setState(() {
+        _results = results;
+        _searching = false;
+      });
+    } catch (_) {
+      if (mounted && _controller.text.trim() == term) {
+        setState(() => _searching = false);
+      }
+    }
   }
 
   void _openGenre(Genre genre) async {
     try {
-      final movies = await _api.getMoviesByGenre(genre.id);
+      final movies = await TmdbService.instance.getMoviesByGenre(genre.id);
       if (!mounted) return;
       Navigator.push(
         context,
@@ -152,24 +188,23 @@ class _SearchScreenState extends State<SearchScreen>
           builder: (_) => _GenreResultsScreen(genre: genre, movies: movies),
         ),
       );
-    } catch (_) {
-      // Ignored for now, fallback to empty screen or no-op
-    }
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final t = ThemeService.instance;
+    final isSearching = _controller.text.isNotEmpty;
 
     return Scaffold(
       backgroundColor: t.bg,
       body: SafeArea(
         child: Column(
           children: [
-            // Search bar
+            // ── Search bar ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Container(
                 decoration: BoxDecoration(
                   color: t.surface2,
@@ -177,8 +212,9 @@ class _SearchScreenState extends State<SearchScreen>
                   border: Border.all(color: t.border),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: t.isDark ? 0.2 : 0.05),
-                      blurRadius: 12,
+                      color: Colors.black
+                          .withValues(alpha: t.isDark ? 0.25 : 0.06),
+                      blurRadius: 14,
                       offset: const Offset(0, 4),
                     ),
                   ],
@@ -189,12 +225,21 @@ class _SearchScreenState extends State<SearchScreen>
                   style: GoogleFonts.inter(color: t.text, fontSize: 16),
                   cursorColor: t.accent,
                   decoration: InputDecoration(
-                    hintText: 'Search movies, TV shows, actors...',
-                    hintStyle: GoogleFonts.inter(color: t.textMuted),
-                    prefixIcon: Icon(Icons.search_rounded, color: t.textMuted),
+                    hintText: _activeTab == _SearchTab.anime
+                        ? 'Search anime on AniList...'
+                        : _activeTab == _SearchTab.movies
+                            ? 'Search movies...'
+                            : _activeTab == _SearchTab.tv
+                                ? 'Search TV shows...'
+                                : 'Search movies, shows, anime...',
+                    hintStyle:
+                        GoogleFonts.inter(color: t.textMuted, fontSize: 15),
+                    prefixIcon:
+                        Icon(Icons.search_rounded, color: t.accent, size: 22),
                     suffixIcon: _controller.text.isNotEmpty
                         ? IconButton(
-                            icon: Icon(Icons.close_rounded, color: t.textMuted),
+                            icon: Icon(Icons.close_rounded,
+                                color: t.textMuted, size: 20),
                             onPressed: () {
                               _controller.clear();
                               _onSearchChanged('');
@@ -209,18 +254,38 @@ class _SearchScreenState extends State<SearchScreen>
               ),
             ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.05),
 
-            // Content
-            Expanded(
-              child: Column(
-                children: [
-                  const AdBannerContainer(),
-                  Expanded(
-                    child: _controller.text.isNotEmpty
-                        ? _buildSearchResults(t)
-                        : _buildGenresGrid(t),
-                  ),
+            // ── Tab bar (always visible) ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: false,
+                indicatorColor: t.accent,
+                indicatorSize: TabBarIndicatorSize.label,
+                labelColor: t.accent,
+                unselectedLabelColor: t.textMuted,
+                labelStyle: GoogleFonts.inter(
+                    fontSize: 13, fontWeight: FontWeight.w700),
+                unselectedLabelStyle: GoogleFonts.inter(
+                    fontSize: 13, fontWeight: FontWeight.w500),
+                dividerColor: t.border.withValues(alpha: 0.5),
+                tabs: const [
+                  Tab(text: 'All'),
+                  Tab(text: 'Movies'),
+                  Tab(text: 'TV'),
+                  Tab(text: 'Anime'),
                 ],
               ),
+            ),
+
+            const SizedBox(height: 4),
+            const AdBannerContainer(),
+
+            // ── Content ──
+            Expanded(
+              child: isSearching
+                  ? _buildSearchResults(t)
+                  : _buildGenresGrid(t),
             ),
           ],
         ),
@@ -240,160 +305,270 @@ class _SearchScreenState extends State<SearchScreen>
               child: CircularProgressIndicator(
                   strokeWidth: 2.5, color: t.accent),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Text('Searching...',
                 style: GoogleFonts.inter(color: t.textMuted, fontSize: 14)),
           ],
         ),
       );
     }
+
     if (_results.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_off_rounded, color: t.textMuted, size: 64)
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: t.surface2,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.search_off_rounded,
+                  color: t.textMuted, size: 48),
+            )
                 .animate(onPlay: (c) => c.repeat(reverse: true))
-                .scaleXY(end: 1.1, duration: 1500.ms, curve: Curves.easeInOut),
-            const SizedBox(height: 16),
+                .scaleXY(
+                    end: 1.06, duration: 1800.ms, curve: Curves.easeInOut),
+            const SizedBox(height: 20),
             Text('No results found',
                 style: GoogleFonts.inter(
                     color: t.text,
                     fontSize: 18,
-                    fontWeight: FontWeight.w600)),
+                    fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             Text('Try a different search term',
-                style: GoogleFonts.inter(color: t.textMuted, fontSize: 14)),
+                style: GoogleFonts.inter(
+                    color: t.textMuted, fontSize: 14)),
           ],
         ).animate().fadeIn(duration: 400.ms),
       );
     }
-      return GridView.builder(
-      padding: const EdgeInsets.all(16),
+
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       physics: const BouncingScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 130,
+        maxCrossAxisExtent: 136,
         childAspectRatio: 0.52,
         crossAxisSpacing: 12,
         mainAxisSpacing: 16,
       ),
       itemCount: _results.length,
-      itemBuilder: (_, i) {
-        final dynamic m = _results[i];
-        final bool isAnime = m is Anime;
-        final bool isPerson = !isAnime && m.mediaType == 'person';
-        final bool isTV = !isAnime && m.isTV;
-        
-        final String title = isAnime ? m.title : m.title;
-        final String imageUrl = isAnime ? (m.coverImage ?? '') : m.posterUrl;
-        
-        String subtitle = '';
-        if (isAnime) subtitle = m.year?.toString() ?? 'Anime';
-        else if (isPerson) subtitle = 'Actor';
-        else subtitle = m.year;
+      itemBuilder: (_, i) => _buildResultCard(_results[i], i, t),
+    );
+  }
 
-        String badgeText = '';
-        if (isAnime) badgeText = 'ANIME';
-        else if (isPerson) badgeText = 'PERSON';
-        else if (isTV) badgeText = 'TV';
+  Widget _buildResultCard(dynamic m, int i, ThemeService t) {
+    final bool isAnime = m is Anime;
+    final bool isPerson = !isAnime && (m as Movie).mediaType == 'person';
+    final bool isTV = !isAnime && !isPerson && m.isTV;
 
-        return GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) {
-                if (isAnime) return AnimeDetailScreen(id: m.id);
-                if (isPerson) return ArtistScreen(id: m.id);
-                if (isTV) return TVDetailScreen(id: m.id);
-                return MovieDetailScreen(id: m.id);
-              },
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+    final String title = m.title;
+    final String imageUrl = isAnime ? (m.coverImage ?? '') : m.posterUrl;
+
+    String subtitle = '';
+    if (isAnime) {
+      subtitle = m.year?.toString() ?? (m.format ?? 'Anime');
+    } else if (isPerson) {
+      subtitle = 'Actor / Director';
+    } else {
+      subtitle = m.year != 'N/A' ? m.year : '';
+    }
+
+    Color badgeColor = t.accent;
+    String badgeText = '';
+    if (isAnime) {
+      badgeText = m.format ?? 'ANIME';
+      badgeColor = const Color(0xFF6366F1);
+    } else if (isPerson) {
+      badgeText = 'ACTOR';
+      badgeColor = const Color(0xFF10B981);
+    } else if (isTV) {
+      badgeText = 'TV';
+      badgeColor = const Color(0xFF8B5CF6);
+    }
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) {
+          if (isAnime) return AnimeDetailScreen(id: m.id, initialAnime: m);
+          if (isPerson) return ArtistScreen(id: m.id);
+          if (isTV) return TVDetailScreen(id: m.id);
+          return MovieDetailScreen(id: m.id);
+        }),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.22),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        imageUrl.isNotEmpty
-                            ? CachedNetworkImage(
-                                imageUrl: imageUrl,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                placeholder: (_, __) =>
-                                    Container(color: t.surface2),
-                                errorWidget: (_, __, ___) =>
-                                    Container(color: t.surface2),
-                              )
-                            : Container(
-                                color: t.surface2,
-                                child: Icon(isPerson ? Icons.person : Icons.movie, color: t.textMuted),
-                              ),
-                        if (badgeText.isNotEmpty)
-                          Positioned(
-                            top: 6,
-                            left: 6,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 3),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [t.accent, t.accent.withValues(alpha: 0.8)],
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Image
+                    imageUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) =>
+                                Container(color: t.surface2),
+                            errorWidget: (_, __, ___) =>
+                                Container(
+                                  color: t.surface2,
+                                  child: Icon(
+                                      isPerson
+                                          ? Icons.person_rounded
+                                          : isAnime
+                                              ? Icons.animation_rounded
+                                              : Icons.movie_rounded,
+                                      color: t.textMuted,
+                                      size: 36),
                                 ),
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: Text(badgeText,
-                                  style: GoogleFonts.inter(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800)),
-                            ),
+                          )
+                        : Container(
+                            color: t.surface2,
+                            child: Icon(
+                                isPerson
+                                    ? Icons.person_rounded
+                                    : Icons.movie_rounded,
+                                color: t.textMuted,
+                                size: 36),
                           ),
-                      ],
+
+                    // Bottom gradient
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: 55,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.75),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+
+                    // Rating for movies/tv
+                    if (!isAnime && !isPerson && m.voteAverage > 0)
+                      Positioned(
+                        bottom: 6,
+                        left: 7,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star_rounded,
+                                color: Color(0xFFFFD700), size: 11),
+                            const SizedBox(width: 2),
+                            Text(m.rating,
+                                style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+
+                    // AniList score for anime
+                    if (isAnime && m.averageScore != null)
+                      Positioned(
+                        bottom: 6,
+                        left: 7,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star_rounded,
+                                color: Color(0xFFFFD700), size: 11),
+                            const SizedBox(width: 2),
+                            Text(m.averageScore!.toStringAsFixed(1),
+                                style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+
+                    // Type badge
+                    if (badgeText.isNotEmpty)
+                      Positioned(
+                        top: 6,
+                        left: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: badgeColor,
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: [
+                              BoxShadow(
+                                color: badgeColor.withValues(alpha: 0.4),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: Text(badgeText,
+                              style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.3)),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                    color: t.text, fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-              Text(
-                subtitle,
-                style: GoogleFonts.inter(color: t.textMuted, fontSize: 11),
-              ),
-            ],
+            ),
           ),
-        )
-            .animate()
-            .fadeIn(delay: (40 * i).ms, duration: 350.ms)
-            .scale(
-              begin: const Offset(0.92, 0.92),
-              end: const Offset(1.0, 1.0),
-              delay: (40 * i).ms,
-              duration: 350.ms,
-              curve: Curves.easeOutCubic,
-            );
-      },
-    );
+          const SizedBox(height: 7),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+                color: t.text, fontSize: 12, fontWeight: FontWeight.w700),
+          ),
+          if (subtitle.isNotEmpty)
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                  color: t.textMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400),
+            ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: (35 * i).ms, duration: 350.ms)
+        .scale(
+          begin: const Offset(0.92, 0.92),
+          end: const Offset(1.0, 1.0),
+          delay: (35 * i).ms,
+          duration: 350.ms,
+          curve: Curves.easeOutCubic,
+        );
   }
 
   Widget _buildGenresGrid(ThemeService t) {
@@ -432,17 +607,25 @@ class _SearchScreenState extends State<SearchScreen>
         ),
       );
     }
+
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
-        Text(
-          'Browse Categories',
-          style: GoogleFonts.inter(
-            color: t.text,
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
-          ),
+        Row(
+          children: [
+            Container(width: 3, height: 22,
+                decoration: BoxDecoration(color: t.accent, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 10),
+            Text(
+              'Browse Categories',
+              style: GoogleFonts.inter(
+                color: t.text,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Wrap(
@@ -463,26 +646,32 @@ class _SearchScreenState extends State<SearchScreen>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: colors[0].withValues(alpha: 0.3),
-                      blurRadius: 8,
+                      color: colors[0].withValues(alpha: 0.35),
+                      blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: Row(
                   children: [
-                    Icon(icon,
-                        color: Colors.white.withValues(alpha: 0.9), size: 22),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 20),
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         genre.name,
                         style: GoogleFonts.inter(
                           color: Colors.white,
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -517,57 +706,94 @@ class _GenreResultsScreen extends StatelessWidget {
         backgroundColor: t.bg,
         foregroundColor: t.text,
         title: Text(genre.name,
-            style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
         elevation: 0,
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 130,
-          childAspectRatio: 0.55,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 16,
-        ),
-        itemCount: movies.length,
-        itemBuilder: (_, i) {
-          final m = movies[i];
-          return GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => m.isTV
-                    ? TVDetailScreen(id: m.id)
-                    : MovieDetailScreen(id: m.id),
+      body: movies.isEmpty
+          ? Center(
+              child: Text('No movies found',
+                  style: GoogleFonts.inter(color: t.textMuted)))
+          : GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 136,
+                childAspectRatio: 0.55,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 16,
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: m.posterUrl.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: m.posterUrl,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                          )
-                        : Container(color: t.surface2),
+              itemCount: movies.length,
+              itemBuilder: (_, i) {
+                final m = movies[i];
+                return GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => m.isTV
+                          ? TVDetailScreen(id: m.id)
+                          : MovieDetailScreen(id: m.id),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(m.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
-                        color: t.text,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600)),
-              ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: m.posterUrl.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: m.posterUrl,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                    )
+                                  : Container(color: t.surface2),
+                            ),
+                            if (m.voteAverage > 0)
+                              Positioned(
+                                bottom: 6,
+                                left: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.7),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.star_rounded,
+                                          color: Color(0xFFFFD700), size: 10),
+                                      const SizedBox(width: 2),
+                                      Text(m.rating,
+                                          style: GoogleFonts.inter(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(m.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                              color: t.text,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700)),
+                      Text(m.year,
+                          style: GoogleFonts.inter(
+                              color: t.textMuted, fontSize: 11)),
+                    ],
+                  ),
+                ).animate().fadeIn(delay: (40 * i).ms, duration: 300.ms);
+              },
             ),
-          ).animate().fadeIn(delay: (40 * i).ms, duration: 300.ms);
-        },
-      ),
     );
   }
 }
