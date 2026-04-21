@@ -181,7 +181,7 @@ class Movie {
         'first_air_date': isTV ? releaseDate : null,
         'number_of_seasons': numberOfSeasons,
         'number_of_episodes': numberOfEpisodes,
-        'media_type': isTV ? 'tv' : 'movie',
+        'media_type': mediaType ?? (isTV ? 'tv' : 'movie'),
       };
 }
 

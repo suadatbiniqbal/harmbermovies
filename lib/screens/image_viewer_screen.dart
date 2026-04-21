@@ -52,7 +52,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
 
     try {
       final url = widget.images[_currentIndex];
-      
+
       if (kIsWeb) {
         // On Web, we can't save to the file system directly like this.
         // For now, we'll just show a message or use a web-specific way if needed.

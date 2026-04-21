@@ -60,7 +60,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         _loading = false;
       });
     } catch (_) {
-      if (mounted) setState(() { _loading = false; _hasError = true; });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _hasError = true;
+        });
+      }
     }
   }
 
@@ -140,21 +145,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                  color: t.surface2, shape: BoxShape.circle),
-              child:
-                  Icon(Icons.wifi_off_rounded, color: t.textMuted, size: 48),
+              decoration:
+                  BoxDecoration(color: t.surface2, shape: BoxShape.circle),
+              child: Icon(Icons.wifi_off_rounded, color: t.textMuted, size: 48),
             ),
             const SizedBox(height: 20),
             Text('Failed to load',
                 style: GoogleFonts.inter(
-                    color: t.text,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700)),
+                    color: t.text, fontSize: 20, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text('Check your connection and try again',
-                style: GoogleFonts.inter(
-                    color: t.textMuted, fontSize: 14)),
+                style: GoogleFonts.inter(color: t.textMuted, fontSize: 14)),
             const SizedBox(height: 28),
             ElevatedButton.icon(
               onPressed: _loadData,
@@ -163,8 +164,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: t.accent,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 28, vertical: 13),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 13),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
@@ -206,7 +207,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (_) => ImageViewerScreen(
-                        images: [m.backdropUrl, ...?(_images.isNotEmpty ? _images : null)],
+                        images: [
+                          m.backdropUrl,
+                          ...?(_images.isNotEmpty ? _images : null)
+                        ],
                         initialIndex: 0,
                         title: m.title,
                       ),
@@ -273,8 +277,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         width: 90,
                         height: 135,
                         fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) =>
-                            Container(width: 90, height: 135, color: t.surface2),
+                        errorWidget: (_, __, ___) => Container(
+                            width: 90, height: 135, color: t.surface2),
                       ),
                     ),
                   ),
@@ -303,14 +307,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           spacing: 7,
                           runSpacing: 5,
                           children: [
-                            _heroBadge(Icons.star_rounded,
-                                m.rating, const Color(0xFFFFD700)),
+                            _heroBadge(Icons.star_rounded, m.rating,
+                                const Color(0xFFFFD700)),
                             if (m.year != 'N/A')
-                              _heroBadge(Icons.calendar_today_rounded,
-                                  m.year, Colors.white60),
+                              _heroBadge(Icons.calendar_today_rounded, m.year,
+                                  Colors.white60),
                             if (m.runtime != null)
-                              _heroBadge(Icons.timer_outlined,
-                                  m.runtime!, Colors.white60),
+                              _heroBadge(Icons.timer_outlined, m.runtime!,
+                                  Colors.white60),
                           ],
                         ),
                       ],
@@ -370,9 +374,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             child: Text(
               m.status!,
               style: GoogleFonts.inter(
-                color: m.status == 'Released'
-                    ? const Color(0xFF10B981)
-                    : t.accent,
+                color:
+                    m.status == 'Released' ? const Color(0xFF10B981) : t.accent,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
@@ -399,7 +402,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   title: m.title,
                   isTV: false,
                   posterPath: m.posterPath,
-                  
                 ),
               ),
             ),
@@ -435,8 +437,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             decoration: BoxDecoration(
               color: isIn ? t.accent.withValues(alpha: 0.15) : t.surface2,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                  color: isIn ? t.accent : t.border, width: 1.5),
+              border: Border.all(color: isIn ? t.accent : t.border, width: 1.5),
             ),
             child: Icon(
               isIn ? Icons.bookmark_rounded : Icons.bookmark_add_outlined,
@@ -489,9 +490,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               ),
               child: Text(g.name,
                   style: GoogleFonts.inter(
-                      color: c,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700)),
+                      color: c, fontSize: 12, fontWeight: FontWeight.w700)),
             );
           }).toList(),
         ),
@@ -509,8 +508,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         _sectionHeader('Synopsis', t),
         const SizedBox(height: 10),
         GestureDetector(
-          onTap: () =>
-              setState(() => _expandedOverview = !_expandedOverview),
+          onTap: () => setState(() => _expandedOverview = !_expandedOverview),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -531,9 +529,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               Text(
                 _expandedOverview ? 'Show less' : 'Read more',
                 style: GoogleFonts.inter(
-                    color: t.accent,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600),
+                    color: t.accent, fontSize: 13, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -560,8 +556,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               return GestureDetector(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => ArtistScreen(id: c.id)),
+                  MaterialPageRoute(builder: (_) => ArtistScreen(id: c.id)),
                 ),
                 child: Container(
                   width: 84,
@@ -573,12 +568,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         height: 72,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(
-                              color: t.border, width: 2),
+                          border: Border.all(color: t.border, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black
-                                  .withValues(alpha: 0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -592,10 +585,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                 )
                               : Container(
                                   color: t.surface2,
-                                  child: Icon(
-                                      Icons.person_rounded,
-                                      color: t.textMuted,
-                                      size: 32),
+                                  child: Icon(Icons.person_rounded,
+                                      color: t.textMuted, size: 32),
                                 ),
                         ),
                       ),
@@ -729,24 +720,20 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 6, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: Colors.black
-                                        .withValues(alpha: 0.7),
-                                    borderRadius:
-                                        BorderRadius.circular(6),
+                                    color: Colors.black.withValues(alpha: 0.7),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       const Icon(Icons.star_rounded,
-                                          color: Color(0xFFFFD700),
-                                          size: 10),
+                                          color: Color(0xFFFFD700), size: 10),
                                       const SizedBox(width: 3),
                                       Text(s.rating,
                                           style: GoogleFonts.inter(
                                               color: Colors.white,
                                               fontSize: 10,
-                                              fontWeight:
-                                                  FontWeight.w700)),
+                                              fontWeight: FontWeight.w700)),
                                     ],
                                   ),
                                 ),
@@ -804,10 +791,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 _infoRow('Revenue',
                     '\$${(m.revenue! / 1000000).toStringAsFixed(1)}M', t),
               if (m.spokenLanguages.isNotEmpty)
-                _infoRow(
-                    'Languages',
-                    m.spokenLanguages.map((l) => l.englishName).join(', '),
-                    t),
+                _infoRow('Languages',
+                    m.spokenLanguages.map((l) => l.englishName).join(', '), t),
               if (m.productionCompanies.isNotEmpty)
                 _infoRow(
                     'Studios',
@@ -837,9 +822,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           Expanded(
             child: Text(value,
                 style: GoogleFonts.inter(
-                    color: t.text,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700)),
+                    color: t.text, fontSize: 13, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -858,9 +841,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         const SizedBox(width: 8),
         Text(title,
             style: GoogleFonts.inter(
-                color: t.text,
-                fontSize: 18,
-                fontWeight: FontWeight.w800)),
+                color: t.text, fontSize: 18, fontWeight: FontWeight.w800)),
       ],
     );
   }

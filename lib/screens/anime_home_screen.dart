@@ -8,6 +8,8 @@ import '../models/anime.dart';
 import '../services/anilist_service.dart';
 import '../services/theme_service.dart';
 import '../widgets/ad_banner.dart';
+import '../widgets/anime_card.dart';
+import '../widgets/section_header.dart';
 import 'anime_detail_screen.dart';
 import '../widgets/history_row.dart';
 
@@ -74,22 +76,38 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
 
     try {
       final trending = await _api.getTrendingAnime();
-      if (trending.isEmpty) throw Exception('Network failed');
-      
+
       if (!mounted) return;
       setState(() {
-        _trending = trending;
+        if (trending.isNotEmpty) _trending = trending;
         _loading = false;
+        // Only set error if we have zero data to show
+        _hasError = trending.isEmpty && _trending.isEmpty;
       });
 
-      _loadChunk2();
-
+      if (!_hasError) _loadChunk2();
     } catch (e) {
       if (mounted) {
         setState(() {
-          _hasError = true;
           _loading = false;
+          // Only hard-error if we have no cached data
+          _hasError = _trending.isEmpty;
         });
+        // If we do have cached data, show a quiet snackbar
+        if (!_hasError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Showing cached content — offline mode'),
+              backgroundColor: Colors.black87,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          _loadChunk2();
+        }
       }
     }
   }
@@ -131,261 +149,178 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
       builder: (context, _) {
         final t = ThemeService.instance;
 
-    final Widget content;
+        final Widget content;
 
-    if (_loading) {
-      content = _buildShimmer(t);
-    } else if (_hasError) {
-      content = Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.wifi_off_rounded, color: t.textMuted, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              'Failed to load Anime\nPlease check your connection',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(color: t.textMuted, fontSize: 16),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _loadData,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: t.accent,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      );
-    } else {
-      content = RefreshIndicator(
-        color: t.accent,
-        backgroundColor: t.surface,
-        onRefresh: _loadData,
-        child: ListView(
-          controller: _scrollController,
-          padding: EdgeInsets.zero,
-          physics: const BouncingScrollPhysics(),
-          children: [
-            _buildHeroCarousel(t),
-            const SizedBox(height: 8),
-            const AdBannerContainer(),
-            const HistoryRow(mediaTypeFilter: 'anime'),
-            const SizedBox(height: 8),
-            _buildAnimeSection('Trending Anime', Icons.trending_up, _trending),
-            _buildAnimeSection('Popular Anime', Icons.local_fire_department, _popular, !_chunk2Loaded),
-            const AdBannerContainer(),
-            const SizedBox(height: 8),
-            _buildAnimeSection('Top Rated Anime', Icons.star_rounded, _topRated, !_chunk2Loaded),
-            const SizedBox(height: 60),
-          ],
-        ),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: t.bg,
-      extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: EdgeInsets.only(
-            top: MediaQuery.of(context).padding.top + 8,
-            left: 16,
-            right: 16,
-            bottom: 12,
-          ),
-          decoration: BoxDecoration(
-            color: _isScrolled 
-                ? t.isDark ? Colors.black.withValues(alpha: 0.95) : Colors.white.withValues(alpha: 0.95)
-                : Colors.transparent,
-            gradient: _isScrolled
-                ? null
-                : LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.8),
-                      Colors.black.withValues(alpha: 0.5),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.6, 1.0],
+        if (_loading) {
+          content = _buildShimmer(t);
+        } else if (_hasError) {
+          content = Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.wifi_off_rounded, color: t.textMuted, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  'Failed to load Anime\nPlease check your connection',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(color: t.textMuted, fontSize: 16),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _loadData,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Retry'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: t.accent,
+                    foregroundColor: Colors.white,
                   ),
-            boxShadow: _isScrolled
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ]
-                : null,
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.asset(
-                  'assets/logo.png',
-                  width: 36,
-                  height: 36,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                ),
+              ],
+            ),
+          );
+        } else {
+          content = RefreshIndicator(
+            color: t.accent,
+            backgroundColor: t.surface,
+            onRefresh: _loadData,
+            child: ListView(
+              controller: _scrollController,
+              padding: EdgeInsets.zero,
+              physics: const BouncingScrollPhysics(),
+              children: [
+                _buildHeroCarousel(t),
+                const SizedBox(height: 8),
+                const AdBannerContainer(),
+                const HistoryRow(mediaTypeFilter: 'anime'),
+                const SizedBox(height: 8),
+                _buildAnimeSection(
+                    'Trending Anime', Icons.trending_up, _trending),
+                _buildAnimeSection('Popular Anime', Icons.local_fire_department,
+                    _popular, !_chunk2Loaded),
+                const AdBannerContainer(),
+                const SizedBox(height: 8),
+                _buildAnimeSection('Top Rated Anime', Icons.star_rounded,
+                    _topRated, !_chunk2Loaded),
+                const SizedBox(height: 60),
+              ],
+            ),
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: t.bg,
+          extendBodyBehindAppBar: true,
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 8,
+                left: 16,
+                right: 16,
+                bottom: 12,
+              ),
+              decoration: BoxDecoration(
+                color: _isScrolled
+                    ? t.isDark
+                        ? Colors.black.withValues(alpha: 0.95)
+                        : Colors.white.withValues(alpha: 0.95)
+                    : Colors.transparent,
+                gradient: _isScrolled
+                    ? null
+                    : LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.8),
+                          Colors.black.withValues(alpha: 0.5),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.6, 1.0],
+                      ),
+                boxShadow: _isScrolled
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        )
+                      ]
+                    : null,
+              ),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      'assets/logo.png',
+                      width: 36,
+                      height: 36,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                          ),
+                        ),
+                        child: const Icon(Icons.play_arrow_rounded,
+                            color: Colors.white, size: 24),
                       ),
                     ),
-                    child: const Icon(Icons.play_arrow_rounded,
-                        color: Colors.white, size: 24),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Harmber Anime',
+                    style: GoogleFonts.inter(
+                      color: _isScrolled && !t.isDark
+                          ? Colors.black87
+                          : Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const Spacer(),
+                  _glassButton(
+                    icon: t.isDark
+                        ? Icons.light_mode_rounded
+                        : Icons.dark_mode_rounded,
+                    onTap: () => ThemeService.instance.toggle(),
+                    isScrolledAndLight: _isScrolled && !t.isDark,
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              Text(
-                'Harmber Anime',
-                style: GoogleFonts.inter(
-                  color: _isScrolled && !t.isDark ? Colors.black87 : Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const Spacer(),
-              _glassButton(
-                icon: t.isDark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
-                onTap: () => ThemeService.instance.toggle(),
-                isScrolledAndLight: _isScrolled && !t.isDark,
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-      body: content,
-    );
+          body: content,
+        );
       },
     );
   }
 
-  Widget _buildAnimeSection(String title, IconData icon, List<Anime> animeList, [bool isLoading = false]) {
+  Widget _buildAnimeSection(String title, IconData icon, List<Anime> animeList,
+      [bool isLoading = false]) {
     final t = ThemeService.instance;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: Row(
-            children: [
-              Icon(icon, color: t.accent, size: 22),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: GoogleFonts.inter(
-                  color: t.text,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
-                ),
-              ),
-            ],
-          ),
-        ),
+        SectionHeader(title: title, icon: icon),
         SizedBox(
-          height: 220,
+          height: 270,
           child: isLoading || animeList.isEmpty
               ? _buildHorizontalShimmer(t)
               : ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: animeList.length,
-                  itemBuilder: (_, i) => _buildAnimeCard(animeList[i], t),
+                  itemBuilder: (_, i) =>
+                      AnimeCard(anime: animeList[i], index: i),
                 ),
         ),
-        const SizedBox(height: 24),
       ],
-    );
-  }
-
-  Widget _buildAnimeCard(Anime anime, ThemeService t) {
-    return GestureDetector(
-      onTap: () => _navigateToDetail(anime),
-      child: Container(
-        width: 140,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: CachedNetworkImage(
-                      imageUrl: anime.coverImage ?? '',
-                      width: 140,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: t.surface2),
-                      errorWidget: (_, __, ___) => Container(
-                        color: t.surface2,
-                        child: Icon(Icons.broken_image_rounded, color: t.textMuted),
-                      ),
-                    ),
-                  ),
-                  if (anime.averageScore != null)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 12),
-                            const SizedBox(width: 3),
-                            Text(
-                              anime.averageScore!.toStringAsFixed(1),
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              anime.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
-                color: t.text,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                height: 1.2,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -408,7 +343,6 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
           ),
           itemBuilder: (_, i, __) => _buildHeroItem(heroes[i], t, i),
         ),
-        
         Positioned(
           bottom: 20,
           left: 0,
@@ -449,9 +383,9 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
               fit: BoxFit.cover,
               alignment: Alignment.center,
               placeholder: (_, __) => Container(color: const Color(0xFF0A0A0F)),
-              errorWidget: (_, __, ___) => Container(color: const Color(0xFF0A0A0F)),
+              errorWidget: (_, __, ___) =>
+                  Container(color: const Color(0xFF0A0A0F)),
             ),
-
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -482,7 +416,6 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
               ),
             ),
           ),
-
           Positioned(
             left: 20,
             right: 20,
@@ -497,7 +430,8 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
+                            const Icon(Icons.star_rounded,
+                                color: Color(0xFFFFD700), size: 14),
                             const SizedBox(width: 4),
                             Text(anime.averageScore!.toStringAsFixed(1),
                                 style: GoogleFonts.inter(
@@ -521,12 +455,24 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
                     ],
                     if (anime.format != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color.fromARGB(255, 4, 138, 210), Color.fromARGB(255, 25, 89, 199)],
+                            colors: [
+                              Color(0xFF8B5CF6),
+                              Color(0xFF6366F1),
+                            ],
                           ),
                           borderRadius: BorderRadius.circular(6),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF8B5CF6)
+                                  .withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Text(anime.format!,
                             style: GoogleFonts.inter(
@@ -536,14 +482,16 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
                                 letterSpacing: 0.5)),
                       ),
                   ],
-                ).animate().fadeIn(delay: 100.ms, duration: 500.ms).slideX(begin: -0.05),
-
+                )
+                    .animate()
+                    .fadeIn(delay: 100.ms, duration: 500.ms)
+                    .slideX(begin: -0.05),
                 const SizedBox(height: 12),
-
-                _heroTitle(anime).animate().fadeIn(delay: 200.ms, duration: 600.ms).slideY(begin: 0.15, curve: Curves.easeOutCubic),
-
+                _heroTitle(anime)
+                    .animate()
+                    .fadeIn(delay: 200.ms, duration: 600.ms)
+                    .slideY(begin: 0.15, curve: Curves.easeOutCubic),
                 const SizedBox(height: 18),
-
                 Row(
                   children: [
                     _heroButton(
@@ -560,7 +508,10 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
                       onTap: () => _navigateToDetail(anime),
                     ),
                   ],
-                ).animate().fadeIn(delay: 450.ms, duration: 500.ms).slideY(begin: 0.1),
+                )
+                    .animate()
+                    .fadeIn(delay: 450.ms, duration: 500.ms)
+                    .slideY(begin: 0.1),
               ],
             ),
           ),
@@ -597,7 +548,9 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
         decoration: BoxDecoration(
           color: filled ? Colors.white : Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
-          border: filled ? null : Border.all(color: Colors.white.withValues(alpha: 0.25)),
+          border: filled
+              ? null
+              : Border.all(color: Colors.white.withValues(alpha: 0.25)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -627,7 +580,10 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
     );
   }
 
-  Widget _glassButton({required IconData icon, required VoidCallback onTap, bool isScrolledAndLight = false}) {
+  Widget _glassButton(
+      {required IconData icon,
+      required VoidCallback onTap,
+      bool isScrolledAndLight = false}) {
     final color = isScrolledAndLight ? Colors.black87 : Colors.white;
     return GestureDetector(
       onTap: onTap,
@@ -689,18 +645,18 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
       itemCount: 5,
       itemBuilder: (_, __) => Container(
         width: 140,
-        margin: const EdgeInsets.only(right: 12),
+        margin: const EdgeInsets.only(right: 14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
         ),
       ),
     );
-    if (!useShimmer) return SizedBox(height: 210, child: list);
+    if (!useShimmer) return SizedBox(height: 270, child: list);
     return Shimmer.fromColors(
       baseColor: t.surface2,
       highlightColor: t.surface,
-      child: SizedBox(height: 210, child: list),
+      child: SizedBox(height: 270, child: list),
     );
   }
 }

@@ -80,7 +80,8 @@ class FcmService {
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     // Required to be initialized in the background isolate
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform); 
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
     debugPrint('FCM background: ${message.notification?.title}');
   } catch (e) {
     debugPrint('FCM background init error: $e');

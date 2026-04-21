@@ -58,8 +58,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
       if (s.title == 'Error') throw Exception('Failed to load');
 
       final allSeasons = await _api.getTVSeasons(widget.id);
-      final realSeasons =
-          allSeasons.where((s) => s.seasonNumber > 0).toList();
+      final realSeasons = allSeasons.where((s) => s.seasonNumber > 0).toList();
 
       if (!mounted) return;
       setState(() {
@@ -76,7 +75,12 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
         _loadEpisodes(_selectedSeason!);
       }
     } catch (_) {
-      if (mounted) setState(() { _loading = false; _hasError = true; });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _hasError = true;
+        });
+      }
     }
   }
 
@@ -87,8 +91,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
       _episodes = [];
     });
     try {
-      final eps =
-          await _api.getSeasonEpisodes(widget.id, season.seasonNumber);
+      final eps = await _api.getSeasonEpisodes(widget.id, season.seasonNumber);
       if (!mounted) return;
       setState(() {
         _episodes = eps;
@@ -143,7 +146,8 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                         const AdBannerContainer(),
                         const SizedBox(height: 20),
                         if (_show!.genres.isNotEmpty) _buildGenres(t),
-                        if (_show!.genres.isNotEmpty) const SizedBox(height: 20),
+                        if (_show!.genres.isNotEmpty)
+                          const SizedBox(height: 20),
                         _buildOverview(t),
                         if (_seasons.isNotEmpty) _buildEpisodesSection(t),
                         if (_cast.isNotEmpty) _buildCast(t),
@@ -177,19 +181,15 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
               padding: const EdgeInsets.all(24),
               decoration:
                   BoxDecoration(color: t.surface2, shape: BoxShape.circle),
-              child: Icon(Icons.wifi_off_rounded,
-                  color: t.textMuted, size: 48),
+              child: Icon(Icons.wifi_off_rounded, color: t.textMuted, size: 48),
             ),
             const SizedBox(height: 20),
             Text('Failed to load',
                 style: GoogleFonts.inter(
-                    color: t.text,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700)),
+                    color: t.text, fontSize: 20, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text('Check your connection and try again',
-                style: GoogleFonts.inter(
-                    color: t.textMuted, fontSize: 14)),
+                style: GoogleFonts.inter(color: t.textMuted, fontSize: 14)),
             const SizedBox(height: 28),
             ElevatedButton.icon(
               onPressed: _loadData,
@@ -198,8 +198,8 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: t.accent,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 28, vertical: 13),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 13),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
@@ -224,11 +224,9 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.55),
             shape: BoxShape.circle,
-            border:
-                Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
           ),
-          child:
-              const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
         ),
       ),
       flexibleSpace: FlexibleSpaceBar(
@@ -305,9 +303,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                         height: 135,
                         fit: BoxFit.cover,
                         errorWidget: (_, __, ___) => Container(
-                            width: 90,
-                            height: 135,
-                            color: t.surface2),
+                            width: 90, height: 135, color: t.surface2),
                       ),
                     ),
                   ),
@@ -317,15 +313,14 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                       spacing: 8,
                       runSpacing: 5,
                       children: [
-                        _heroBadge(Icons.star_rounded,
-                            s.rating, const Color(0xFFFFD700)),
+                        _heroBadge(Icons.star_rounded, s.rating,
+                            const Color(0xFFFFD700)),
                         if (s.year != 'N/A')
-                          _heroBadge(Icons.calendar_today_rounded,
-                              s.year, Colors.white60),
+                          _heroBadge(Icons.calendar_today_rounded, s.year,
+                              Colors.white60),
                         if (s.numberOfSeasons != null)
                           _heroBadge(Icons.layers_rounded,
-                              '${s.numberOfSeasons} Seasons',
-                              Colors.white60),
+                              '${s.numberOfSeasons} Seasons', Colors.white60),
                       ],
                     ),
                   ),
@@ -370,12 +365,11 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
     return Row(
       children: [
         if (s.numberOfSeasons != null)
-          _statChip(Icons.layers_rounded,
-              '${s.numberOfSeasons} Seasons', t),
+          _statChip(Icons.layers_rounded, '${s.numberOfSeasons} Seasons', t),
         if (s.numberOfEpisodes != null) ...[
           const SizedBox(width: 8),
-          _statChip(Icons.video_library_rounded,
-              '${s.numberOfEpisodes} Episodes', t),
+          _statChip(
+              Icons.video_library_rounded, '${s.numberOfEpisodes} Episodes', t),
         ],
         if (s.status != null) ...[
           const SizedBox(width: 8),
@@ -387,8 +381,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
 
   Widget _statChip(IconData icon, String text, ThemeService t) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: t.surface2,
         borderRadius: BorderRadius.circular(10),
@@ -401,9 +394,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
           const SizedBox(width: 5),
           Text(text,
               style: GoogleFonts.inter(
-                  color: t.text,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)),
+                  color: t.text, fontSize: 12, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -427,7 +418,6 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                   season: _selectedSeason?.seasonNumber ?? 1,
                   episode: 1,
                   posterPath: s.posterPath,
-                  
                 ),
               ),
             ),
@@ -450,9 +440,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
             WatchlistService.instance.toggle(s);
             final nowIn = WatchlistService.instance.isInWatchlist(s.id);
             Fluttertoast.showToast(
-              msg: nowIn
-                  ? '✓ Added to Watchlist'
-                  : 'Removed from Watchlist',
+              msg: nowIn ? '✓ Added to Watchlist' : 'Removed from Watchlist',
               backgroundColor: Colors.white,
               textColor: const Color(0xFF121212),
               gravity: ToastGravity.BOTTOM,
@@ -463,17 +451,12 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
             height: 52,
             width: 52,
             decoration: BoxDecoration(
-              color: isIn
-                  ? t.accent.withValues(alpha: 0.15)
-                  : t.surface2,
+              color: isIn ? t.accent.withValues(alpha: 0.15) : t.surface2,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                  color: isIn ? t.accent : t.border, width: 1.5),
+              border: Border.all(color: isIn ? t.accent : t.border, width: 1.5),
             ),
             child: Icon(
-              isIn
-                  ? Icons.bookmark_rounded
-                  : Icons.bookmark_add_outlined,
+              isIn ? Icons.bookmark_rounded : Icons.bookmark_add_outlined,
               color: isIn ? t.accent : t.textMuted,
             ),
           ),
@@ -494,8 +477,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
           children: _show!.genres.map((g) {
             final c = t.accent;
             return Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
                 color: c.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
@@ -503,9 +485,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
               ),
               child: Text(g.name,
                   style: GoogleFonts.inter(
-                      color: c,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700)),
+                      color: c, fontSize: 12, fontWeight: FontWeight.w700)),
             );
           }).toList(),
         ),
@@ -523,8 +503,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
         _sectionHeader('Synopsis', t),
         const SizedBox(height: 10),
         GestureDetector(
-          onTap: () =>
-              setState(() => _expandedOverview = !_expandedOverview),
+          onTap: () => setState(() => _expandedOverview = !_expandedOverview),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -534,22 +513,16 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                 child: Text(
                   ov,
                   maxLines: _expandedOverview ? null : 4,
-                  overflow: _expandedOverview
-                      ? null
-                      : TextOverflow.ellipsis,
+                  overflow: _expandedOverview ? null : TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
-                      color: t.textMuted,
-                      fontSize: 14,
-                      height: 1.65),
+                      color: t.textMuted, fontSize: 14, height: 1.65),
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 _expandedOverview ? 'Show less' : 'Read more',
                 style: GoogleFonts.inter(
-                    color: t.accent,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600),
+                    color: t.accent, fontSize: 13, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -569,8 +542,8 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
             _sectionHeader('Episodes', t),
             if (_episodes.isNotEmpty)
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: t.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
@@ -595,8 +568,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                 child: Row(
                   children: _seasons.map((season) {
                     final isSelected =
-                        _selectedSeason?.seasonNumber ==
-                            season.seasonNumber;
+                        _selectedSeason?.seasonNumber == season.seasonNumber;
                     return GestureDetector(
                       onTap: () {
                         if (!isSelected) {
@@ -612,7 +584,10 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                         decoration: BoxDecoration(
                           gradient: isSelected
                               ? LinearGradient(
-                                  colors: [t.accent, t.accent.withValues(alpha: 0.8)],
+                                  colors: [
+                                    t.accent,
+                                    t.accent.withValues(alpha: 0.8)
+                                  ],
                                 )
                               : null,
                           color: isSelected ? null : t.surface2,
@@ -635,13 +610,10 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                               ? 'S${season.seasonNumber}'
                               : season.name,
                           style: GoogleFonts.inter(
-                            color: isSelected
-                                ? Colors.white
-                                : t.textMuted,
+                            color: isSelected ? Colors.white : t.textMuted,
                             fontSize: 13,
-                            fontWeight: isSelected
-                                ? FontWeight.w800
-                                : FontWeight.w500,
+                            fontWeight:
+                                isSelected ? FontWeight.w800 : FontWeight.w500,
                           ),
                         ),
                       ),
@@ -658,18 +630,15 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
           Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: CircularProgressIndicator(
-                  color: t.accent, strokeWidth: 2.5),
+              child:
+                  CircularProgressIndicator(color: t.accent, strokeWidth: 2.5),
             ),
           )
         else
           ..._episodes
               .take(12)
-              .toList()
               .indexed
-              .map((entry) =>
-                  _buildEpisodeTile(entry.$2, entry.$1, t))
-              .toList(),
+              .map((entry) => _buildEpisodeTile(entry.$2, entry.$1, t)),
 
         if (_episodes.length > 12)
           Padding(
@@ -677,13 +646,10 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
             child: Center(
               child: TextButton.icon(
                 onPressed: () {},
-                icon: Icon(Icons.expand_more_rounded,
-                    color: t.accent),
-                label: Text(
-                    '+${_episodes.length - 12} more episodes',
+                icon: Icon(Icons.expand_more_rounded, color: t.accent),
+                label: Text('+${_episodes.length - 12} more episodes',
                     style: GoogleFonts.inter(
-                        color: t.accent,
-                        fontWeight: FontWeight.w600)),
+                        color: t.accent, fontWeight: FontWeight.w600)),
               ),
             ),
           ),
@@ -699,13 +665,12 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => PlayerScreen(
-            id  : _show!.id,
+            id: _show!.id,
             title: _show!.title,
             isTV: true,
             season: ep.seasonNumber,
             episode: ep.episodeNumber,
             posterPath: _show!.posterPath,
-            
           ),
         ),
       ),
@@ -821,11 +786,9 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                               const Icon(Icons.star_rounded,
                                   color: Color(0xFFFFD700), size: 11),
                               const SizedBox(width: 3),
-                              Text(
-                                  ep.voteAverage.toStringAsFixed(1),
+                              Text(ep.voteAverage.toStringAsFixed(1),
                                   style: GoogleFonts.inter(
-                                      color: t.textMuted,
-                                      fontSize: 11)),
+                                      color: t.textMuted, fontSize: 11)),
                             ],
                           ),
                       ],
@@ -860,8 +823,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
               return GestureDetector(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => ArtistScreen(id: c.id)),
+                  MaterialPageRoute(builder: (_) => ArtistScreen(id: c.id)),
                 ),
                 child: Container(
                   width: 84,
@@ -873,12 +835,10 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                         height: 72,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border:
-                              Border.all(color: t.border, width: 2),
+                          border: Border.all(color: t.border, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color:
-                                  Colors.black.withValues(alpha: 0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -996,8 +956,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
               return GestureDetector(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => TVDetailScreen(id: s.id)),
+                  MaterialPageRoute(builder: (_) => TVDetailScreen(id: s.id)),
                 ),
                 child: Container(
                   width: 130,
@@ -1026,24 +985,20 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 6, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: Colors.black
-                                        .withValues(alpha: 0.7),
-                                    borderRadius:
-                                        BorderRadius.circular(6),
+                                    color: Colors.black.withValues(alpha: 0.7),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       const Icon(Icons.star_rounded,
-                                          color: Color(0xFFFFD700),
-                                          size: 10),
+                                          color: Color(0xFFFFD700), size: 10),
                                       const SizedBox(width: 3),
                                       Text(s.rating,
                                           style: GoogleFonts.inter(
                                               color: Colors.white,
                                               fontSize: 10,
-                                              fontWeight:
-                                                  FontWeight.w700)),
+                                              fontWeight: FontWeight.w700)),
                                     ],
                                   ),
                                 ),
@@ -1078,15 +1033,12 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
           width: 3,
           height: 18,
           decoration: BoxDecoration(
-              color: t.accent,
-              borderRadius: BorderRadius.circular(2)),
+              color: t.accent, borderRadius: BorderRadius.circular(2)),
         ),
         const SizedBox(width: 8),
         Text(title,
             style: GoogleFonts.inter(
-                color: t.text,
-                fontSize: 18,
-                fontWeight: FontWeight.w800)),
+                color: t.text, fontSize: 18, fontWeight: FontWeight.w800)),
       ],
     );
   }

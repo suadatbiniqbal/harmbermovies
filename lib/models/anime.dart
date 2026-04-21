@@ -41,7 +41,7 @@ class Anime {
 
   factory Anime.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Anime(id: 0, title: 'Unknown');
-    
+
     return Anime(
       id: json['id'] ?? 0,
       title: json['title']?['english'] ??
@@ -68,8 +68,9 @@ class Anime {
           [],
       recommendations: (json['recommendations']?['nodes'] as List?)
               ?.map((n) {
-                if (n is Map<String, dynamic> && n.containsKey('mediaRecommendation')) {
-                   return AnimeRecommendation.fromJson(n['mediaRecommendation']);
+                if (n is Map<String, dynamic> &&
+                    n.containsKey('mediaRecommendation')) {
+                  return AnimeRecommendation.fromJson(n['mediaRecommendation']);
                 }
                 return AnimeRecommendation.fromJson(n);
               })
@@ -121,7 +122,7 @@ class AnimeEpisode {
 
   factory AnimeEpisode.fromJson(Map<String, dynamic>? json) {
     if (json == null) return AnimeEpisode(id: 0, title: 'Unknown', number: 0);
-    
+
     String? epTitle = json['title'];
     if (epTitle == null && json['number'] != null) {
       epTitle = 'Episode ${json['number']}';
@@ -161,7 +162,8 @@ class AnimeRelation {
     final media = json['node'];
     return AnimeRelation(
       id: media['id'] ?? 0,
-      title: media['title']?['english'] ?? media['title']?['romaji'] ?? 'Unknown',
+      title:
+          media['title']?['english'] ?? media['title']?['romaji'] ?? 'Unknown',
       coverImage: media['coverImage']?['large'],
       relationType: json['relationType'] ?? '',
       format: media['format'],
@@ -189,8 +191,8 @@ class AnimeRecommendation {
       id: json['id'] ?? 0,
       title: json['title']?['english'] ?? json['title']?['romaji'] ?? 'Unknown',
       coverImage: json['coverImage']?['large'],
-      averageScore: json['averageScore'] != null 
-          ? (json['averageScore'] as num).toDouble() / 10 
+      averageScore: json['averageScore'] != null
+          ? (json['averageScore'] as num).toDouble() / 10
           : null,
     );
   }

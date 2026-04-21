@@ -12,9 +12,11 @@ class TmdbService {
 
   /// Proxy fallback chain: try each in order until one works.
   /// api.tmdb.org is the official alternate hostname that Jio sometimes doesn't block.
+  /// tmdb.saurav.dev is a community reverse proxy that also works when the official ones are blocked.
   static const List<String> _baseUrls = [
     'https://api.themoviedb.org/3',
     'https://api.tmdb.org/3',
+    'https://tmdb.saurav.dev/3',
   ];
 
   final Map<String, _CacheEntry> _cache = {};
@@ -26,8 +28,8 @@ class TmdbService {
   Future<void> _initCache() async {
     if (_prefs != null) return;
     _prefs = await SharedPreferences.getInstance();
-    _workingBaseIndex = (_prefs!.getInt('tmdb_proxy_idx') ?? 0)
-        .clamp(0, _baseUrls.length - 1);
+    _workingBaseIndex =
+        (_prefs!.getInt('tmdb_proxy_idx') ?? 0).clamp(0, _baseUrls.length - 1);
 
     final stored = _prefs!.getString('tmdb_cache_v3');
     if (stored != null) {
@@ -76,9 +78,7 @@ class TmdbService {
       try {
         final uri = Uri.parse('${_baseUrls[idx]}$path')
             .replace(queryParameters: queryParams);
-        final res = await _client
-            .get(uri)
-            .timeout(const Duration(seconds: 13));
+        final res = await _client.get(uri).timeout(const Duration(seconds: 13));
 
         if (res.statusCode == 200) {
           if (idx != _workingBaseIndex) {
@@ -361,6 +361,5 @@ class _CacheEntry {
   bool get isValid => DateTime.now().difference(timestamp).inHours < 24;
 
   // 30 minutes for search results
-  bool get isSearchValid =>
-      DateTime.now().difference(timestamp).inMinutes < 30;
+  bool get isSearchValid => DateTime.now().difference(timestamp).inMinutes < 30;
 }

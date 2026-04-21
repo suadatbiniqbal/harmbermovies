@@ -172,7 +172,7 @@ class _ArtistScreenState extends State<ArtistScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   const AdBannerContainer(),
                   const SizedBox(height: 16),
 

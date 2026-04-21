@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen>
     if (_scrollController.offset > 100 && !_chunk2Loaded && !_isLoadingChunk2) {
       _loadChunk2();
     }
-    
+
     if (_scrollController.offset > 400 && !_chunk3Loaded && !_isLoadingChunk3) {
       _loadChunk3();
     }
@@ -84,8 +84,9 @@ class _HomeScreenState extends State<HomeScreen>
     final updateData = await UpdateService.checkForUpdate();
     if (updateData != null && mounted) {
       final apkUrl = UpdateService.getApkUrl(updateData);
-      final releaseNotes = updateData['body'] as String? ?? 'A new version of Harmber Movies is available.';
-      
+      final releaseNotes = updateData['body'] as String? ??
+          'A new version of Harmber Movies is available.';
+
       if (apkUrl != null) {
         showCupertinoDialog(
           context: context,
@@ -114,7 +115,8 @@ class _HomeScreenState extends State<HomeScreen>
                 CupertinoDialogAction(
                   isDefaultAction: true,
                   onPressed: () {
-                    launchUrl(Uri.parse(apkUrl), mode: LaunchMode.externalApplication);
+                    launchUrl(Uri.parse(apkUrl),
+                        mode: LaunchMode.externalApplication);
                   },
                   child: const Text('Update Now'),
                 ),
@@ -176,36 +178,42 @@ class _HomeScreenState extends State<HomeScreen>
       _topRatedTV = [];
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please wait, loading data...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-
     try {
       // Chunk 1: Hero & Trending (Crucial for first paint)
       final trending = await _api.getTrending();
-      if (trending.isEmpty) throw Exception('Network failed');
-      
+
       if (!mounted) return;
       setState(() {
-        _trending = trending;
+        if (trending.isNotEmpty) _trending = trending;
         _loading = false;
+        _hasError = trending.isEmpty && _trending.isEmpty;
       });
 
-      // Background logo fetch for heroes
-      _fetchHeroLogos(trending.take(6).toList());
-
-      // Start chunk 2 straight away to be faster
-      _loadChunk2();
-
+      if (!_hasError) {
+        _fetchHeroLogos((_trending).take(6).toList());
+        _loadChunk2();
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _hasError = true;
           _loading = false;
+          _hasError = _trending.isEmpty;
         });
+        if (!_hasError) {
+          // Quietly show cached content with a snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Showing cached content — offline mode'),
+              backgroundColor: Colors.black87,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          _loadChunk2();
+        }
       }
     }
   }
@@ -260,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen>
     try {
       final logoPathResults = await Future.wait(
           heroItems.map((m) => _api.getLogoPath(m.id, isTV: m.isTV)));
-          
+
       if (!mounted) return;
       setState(() {
         _trending = _trending.asMap().entries.map((entry) {
@@ -392,8 +400,10 @@ class _HomeScreenState extends State<HomeScreen>
             bottom: 12,
           ),
           decoration: BoxDecoration(
-            color: _isScrolled 
-                ? t.isDark ? Colors.black.withValues(alpha: 0.95) : Colors.white.withValues(alpha: 0.95)
+            color: _isScrolled
+                ? t.isDark
+                    ? Colors.black.withValues(alpha: 0.95)
+                    : Colors.white.withValues(alpha: 0.95)
                 : Colors.transparent,
             gradient: _isScrolled
                 ? null
@@ -444,7 +454,8 @@ class _HomeScreenState extends State<HomeScreen>
               Text(
                 'Harmber Movies',
                 style: GoogleFonts.inter(
-                  color: _isScrolled && !t.isDark ? Colors.black87 : Colors.white,
+                  color:
+                      _isScrolled && !t.isDark ? Colors.black87 : Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
@@ -485,7 +496,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           itemBuilder: (_, i, __) => _buildHeroItem(heroes[i], t, i),
         ),
-        
+
         // Page indicators
         Positioned(
           bottom: 20,
@@ -526,8 +537,7 @@ class _HomeScreenState extends State<HomeScreen>
             CachedNetworkImage(
               imageUrl: movie.backdropUrl,
               fit: BoxFit.cover,
-              placeholder: (_, __) =>
-                  Container(color: const Color(0xFF0A0A0F)),
+              placeholder: (_, __) => Container(color: const Color(0xFF0A0A0F)),
               errorWidget: (_, __, ___) =>
                   Container(color: const Color(0xFF0A0A0F)),
             ),
@@ -607,7 +617,10 @@ class _HomeScreenState extends State<HomeScreen>
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color.fromARGB(255, 4, 138, 210), Color.fromARGB(255, 25, 89, 199)],
+                            colors: [
+                              Color.fromARGB(255, 4, 138, 210),
+                              Color.fromARGB(255, 25, 89, 199)
+                            ],
                           ),
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -656,9 +669,7 @@ class _HomeScreenState extends State<HomeScreen>
                       fontWeight: FontWeight.w400,
                       height: 1.5,
                     ),
-                  )
-                      .animate()
-                      .fadeIn(delay: 350.ms, duration: 500.ms),
+                  ).animate().fadeIn(delay: 350.ms, duration: 500.ms),
 
                 const SizedBox(height: 18),
 
@@ -728,8 +739,7 @@ class _HomeScreenState extends State<HomeScreen>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                color: filled ? Colors.black : Colors.white, size: 20),
+            Icon(icon, color: filled ? Colors.black : Colors.white, size: 20),
             const SizedBox(width: 8),
             Text(label,
                 style: GoogleFonts.inter(
@@ -754,7 +764,10 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _glassButton({required IconData icon, required VoidCallback onTap, bool isScrolledAndLight = false}) {
+  Widget _glassButton(
+      {required IconData icon,
+      required VoidCallback onTap,
+      bool isScrolledAndLight = false}) {
     final color = isScrolledAndLight ? Colors.black87 : Colors.white;
     return GestureDetector(
       onTap: onTap,

@@ -142,7 +142,8 @@ class _AdBannerContainerState extends State<AdBannerContainer> {
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(4),
@@ -167,7 +168,8 @@ class _AdBannerContainerState extends State<AdBannerContainer> {
                           ),
                         ),
                         const Spacer(),
-                        Icon(Icons.info_outline_rounded, size: 14, color: t.textMuted),
+                        Icon(Icons.info_outline_rounded,
+                            size: 14, color: t.textMuted),
                       ],
                     ),
                   ),
@@ -177,7 +179,8 @@ class _AdBannerContainerState extends State<AdBannerContainer> {
                     decoration: BoxDecoration(
                       color: t.bg,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: t.border.withValues(alpha: 0.2)),
+                      border:
+                          Border.all(color: t.border.withValues(alpha: 0.2)),
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
@@ -205,7 +208,8 @@ class _AdBannerContainerState extends State<AdBannerContainer> {
                   ),
                 ],
               ),
-            ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.95, 0.95), curve: Curves.easeOutBack),
+            ).animate().fadeIn(duration: 600.ms).scale(
+                begin: const Offset(0.95, 0.95), curve: Curves.easeOutBack),
           ],
         ),
       ),

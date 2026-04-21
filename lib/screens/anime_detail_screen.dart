@@ -238,9 +238,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
             const SizedBox(height: 24),
             Text('Connection Failed',
                 style: GoogleFonts.inter(
-                    color: t.text,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700)),
+                    color: t.text, fontSize: 20, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text(
               'Could not load anime details.\nPlease check your connection.',
@@ -252,8 +250,8 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
             ElevatedButton.icon(
               onPressed: _loadData,
               icon: const Icon(Icons.refresh_rounded),
-              label:
-                  Text('Retry', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+              label: Text('Retry',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: t.accent,
                 foregroundColor: Colors.white,
@@ -282,8 +280,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.55),
             shape: BoxShape.circle,
-            border:
-                Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
           ),
           child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
         ),
@@ -394,8 +391,10 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                           color: t.textMuted, size: 40),
                     ),
             ),
-          ).animate().fadeIn(duration: 400.ms).scale(
-              begin: const Offset(0.9, 0.9)),
+          )
+              .animate()
+              .fadeIn(duration: 400.ms)
+              .scale(begin: const Offset(0.9, 0.9)),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -414,8 +413,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
               if (a.studios.isNotEmpty)
                 Row(
                   children: [
-                    Icon(Icons.business_rounded,
-                        size: 13, color: t.accent),
+                    Icon(Icons.business_rounded, size: 13, color: t.accent),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -437,14 +435,17 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                 runSpacing: 7,
                 children: [
                   if (a.averageScore != null)
-                    _chip(Icons.star_rounded,
+                    _chip(
+                        Icons.star_rounded,
                         '${a.averageScore!.toStringAsFixed(1)} / 10',
-                        const Color(0xFFFFD700), t),
+                        const Color(0xFFFFD700),
+                        t),
                   if (a.episodes != null)
-                    _chip(Icons.video_library_rounded,
-                        '${a.episodes} Eps', t.textMuted, t),
+                    _chip(Icons.video_library_rounded, '${a.episodes} Eps',
+                        t.textMuted, t),
                   if (a.status != null)
-                    _chip(Icons.info_outline_rounded, a.status!, t.textMuted, t),
+                    _chip(
+                        Icons.info_outline_rounded, a.status!, t.textMuted, t),
                   if (a.year != null)
                     _chip(Icons.calendar_today_rounded, a.year.toString(),
                         t.textMuted, t),
@@ -482,8 +483,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
           child: ElevatedButton.icon(
             onPressed: () => _playEpisode(1),
             icon: const Icon(Icons.play_arrow_rounded, size: 26),
-            label: Text(
-                a.format == 'MOVIE' ? 'Watch Movie' : 'Watch Episode 1',
+            label: Text(a.format == 'MOVIE' ? 'Watch Movie' : 'Watch Episode 1',
                 style: GoogleFonts.inter(
                     fontWeight: FontWeight.w800, fontSize: 15)),
             style: ElevatedButton.styleFrom(
@@ -507,7 +507,8 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                 WatchlistService.instance.toggle(movie);
                 final nowIn = WatchlistService.instance.isInWatchlist(a.id);
                 Fluttertoast.showToast(
-                  msg: nowIn ? '✓ Added to Watchlist' : 'Removed from Watchlist',
+                  msg:
+                      nowIn ? '✓ Added to Watchlist' : 'Removed from Watchlist',
                   backgroundColor: Colors.white,
                   textColor: const Color(0xFF121212),
                   gravity: ToastGravity.BOTTOM,
@@ -518,17 +519,13 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                 height: 54,
                 width: 54,
                 decoration: BoxDecoration(
-                  color: isIn
-                      ? t.accent.withValues(alpha: 0.15)
-                      : t.surface2,
+                  color: isIn ? t.accent.withValues(alpha: 0.15) : t.surface2,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                      color: isIn ? t.accent : t.border, width: 1.5),
+                  border:
+                      Border.all(color: isIn ? t.accent : t.border, width: 1.5),
                 ),
                 child: Icon(
-                  isIn
-                      ? Icons.bookmark_rounded
-                      : Icons.bookmark_add_outlined,
+                  isIn ? Icons.bookmark_rounded : Icons.bookmark_add_outlined,
                   color: isIn ? t.accent : t.textMuted,
                   size: 24,
                 ),
@@ -546,18 +543,14 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
     final days = time ~/ 86400;
     final hours = (time % 86400) ~/ 3600;
 
-    String countdown =
-        days > 0 ? '$days days $hours hrs' : '$hours hours';
+    String countdown = days > 0 ? '$days days $hours hrs' : '$hours hours';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            t.accent.withValues(alpha: 0.18),
-            t.surface2
-          ],
+          colors: [t.accent.withValues(alpha: 0.18), t.surface2],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -586,14 +579,15 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                         fontSize: 15)),
                 const SizedBox(height: 2),
                 Text('Airing in $countdown',
-                    style:
-                        GoogleFonts.inter(color: t.textMuted, fontSize: 13)),
+                    style: GoogleFonts.inter(color: t.textMuted, fontSize: 13)),
               ],
             ),
           ),
         ],
       ),
-    ).animate().shimmer(duration: 2200.ms, color: t.accent.withValues(alpha: 0.08));
+    )
+        .animate()
+        .shimmer(duration: 2200.ms, color: t.accent.withValues(alpha: 0.08));
   }
 
   Widget _buildGenres(Anime a, ThemeService t) {
@@ -622,8 +616,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
       children: a.genres.map((g) {
         final color = genreColors[g] ?? t.accent;
         return Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(20),
@@ -631,9 +624,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
           ),
           child: Text(g,
               style: GoogleFonts.inter(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700)),
+                  color: color, fontSize: 12, fontWeight: FontWeight.w700)),
         );
       }).toList(),
     );
@@ -660,8 +651,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                 child: Text(
                   clean,
                   maxLines: _expandDesc ? null : 4,
-                  overflow:
-                      _expandDesc ? null : TextOverflow.ellipsis,
+                  overflow: _expandDesc ? null : TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
                       color: t.textMuted, fontSize: 14, height: 1.6),
                 ),
@@ -670,9 +660,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
               Text(
                 _expandDesc ? 'Show less' : 'Read more',
                 style: GoogleFonts.inter(
-                    color: t.accent,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600),
+                    color: t.accent, fontSize: 13, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -688,8 +676,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
     final prequels =
         a.relations.where((r) => r.relationType == 'PREQUEL').toList();
     final others = a.relations
-        .where((r) =>
-            r.relationType != 'SEQUEL' && r.relationType != 'PREQUEL')
+        .where((r) => r.relationType != 'SEQUEL' && r.relationType != 'PREQUEL')
         .toList();
 
     return Column(
@@ -697,24 +684,26 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
       children: [
         _sectionHeader('Seasons & Related', t),
         const SizedBox(height: 12),
-        if (prequels.isNotEmpty) _buildRelationRow('Prequel', prequels, const Color(0xFF8B5CF6), t),
-        if (sequels.isNotEmpty) _buildRelationRow('Sequel', sequels, const Color(0xFF6366F1), t),
-        if (others.isNotEmpty) _buildRelationRow('Related', others, t.accent, t),
+        if (prequels.isNotEmpty)
+          _buildRelationRow('Prequel', prequels, const Color(0xFF8B5CF6), t),
+        if (sequels.isNotEmpty)
+          _buildRelationRow('Sequel', sequels, const Color(0xFF6366F1), t),
+        if (others.isNotEmpty)
+          _buildRelationRow('Related', others, t.accent, t),
         const SizedBox(height: 8),
       ],
     );
   }
 
-  Widget _buildRelationRow(
-      String label, List<AnimeRelation> items, Color badgeColor, ThemeService t) {
+  Widget _buildRelationRow(String label, List<AnimeRelation> items,
+      Color badgeColor, ThemeService t) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: badgeColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
@@ -839,8 +828,8 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
             AspectRatio(
               aspectRatio: 16 / 9,
               child: ClipRRect(
-                borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(14)),
+                borderRadius:
+                    const BorderRadius.horizontal(left: Radius.circular(14)),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -939,8 +928,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                       fontSize: 14,
                       fontWeight: FontWeight.w600)),
             ),
-            Icon(Icons.play_circle_fill_rounded,
-                color: t.accent, size: 30),
+            Icon(Icons.play_circle_fill_rounded, color: t.accent, size: 30),
           ],
         ),
       ),
@@ -1000,17 +988,14 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       const Icon(Icons.star_rounded,
-                                          color: Color(0xFFFFD700),
-                                          size: 10),
+                                          color: Color(0xFFFFD700), size: 10),
                                       const SizedBox(width: 2),
                                       Text(
-                                        r.averageScore!
-                                            .toStringAsFixed(1),
+                                        r.averageScore!.toStringAsFixed(1),
                                         style: GoogleFonts.inter(
                                             color: Colors.white,
                                             fontSize: 10,
-                                            fontWeight:
-                                                FontWeight.w700),
+                                            fontWeight: FontWeight.w700),
                                       ),
                                     ],
                                   ),
@@ -1054,9 +1039,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
         const SizedBox(width: 8),
         Text(title,
             style: GoogleFonts.inter(
-                color: t.text,
-                fontSize: 18,
-                fontWeight: FontWeight.w800)),
+                color: t.text, fontSize: 18, fontWeight: FontWeight.w800)),
       ],
     );
   }
@@ -1073,9 +1056,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
           const SizedBox(width: 4),
           Text(text,
               style: GoogleFonts.inter(
-                  color: t.text,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)),
+                  color: t.text, fontSize: 12, fontWeight: FontWeight.w600)),
         ],
       ),
     );

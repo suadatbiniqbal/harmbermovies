@@ -140,7 +140,8 @@ class _SearchScreenState extends State<SearchScreen>
       return;
     }
     setState(() => _searching = true);
-    _debounce = Timer(const Duration(milliseconds: 300), () => _triggerSearch(term));
+    _debounce =
+        Timer(const Duration(milliseconds: 300), () => _triggerSearch(term));
   }
 
   Future<void> _triggerSearch(String term) async {
@@ -283,9 +284,7 @@ class _SearchScreenState extends State<SearchScreen>
 
             // ── Content ──
             Expanded(
-              child: isSearching
-                  ? _buildSearchResults(t)
-                  : _buildGenresGrid(t),
+              child: isSearching ? _buildSearchResults(t) : _buildGenresGrid(t),
             ),
           ],
         ),
@@ -302,8 +301,8 @@ class _SearchScreenState extends State<SearchScreen>
             SizedBox(
               width: 32,
               height: 32,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2.5, color: t.accent),
+              child:
+                  CircularProgressIndicator(strokeWidth: 2.5, color: t.accent),
             ),
             const SizedBox(height: 14),
             Text('Searching...',
@@ -324,22 +323,18 @@ class _SearchScreenState extends State<SearchScreen>
                 color: t.surface2,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.search_off_rounded,
-                  color: t.textMuted, size: 48),
+              child:
+                  Icon(Icons.search_off_rounded, color: t.textMuted, size: 48),
             )
                 .animate(onPlay: (c) => c.repeat(reverse: true))
-                .scaleXY(
-                    end: 1.06, duration: 1800.ms, curve: Curves.easeInOut),
+                .scaleXY(end: 1.06, duration: 1800.ms, curve: Curves.easeInOut),
             const SizedBox(height: 20),
             Text('No results found',
                 style: GoogleFonts.inter(
-                    color: t.text,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700)),
+                    color: t.text, fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             Text('Try a different search term',
-                style: GoogleFonts.inter(
-                    color: t.textMuted, fontSize: 14)),
+                style: GoogleFonts.inter(color: t.textMuted, fontSize: 14)),
           ],
         ).animate().fadeIn(duration: 400.ms),
       );
@@ -426,18 +421,17 @@ class _SearchScreenState extends State<SearchScreen>
                             fit: BoxFit.cover,
                             placeholder: (_, __) =>
                                 Container(color: t.surface2),
-                            errorWidget: (_, __, ___) =>
-                                Container(
-                                  color: t.surface2,
-                                  child: Icon(
-                                      isPerson
-                                          ? Icons.person_rounded
-                                          : isAnime
-                                              ? Icons.animation_rounded
-                                              : Icons.movie_rounded,
-                                      color: t.textMuted,
-                                      size: 36),
-                                ),
+                            errorWidget: (_, __, ___) => Container(
+                              color: t.surface2,
+                              child: Icon(
+                                  isPerson
+                                      ? Icons.person_rounded
+                                      : isAnime
+                                          ? Icons.animation_rounded
+                                          : Icons.movie_rounded,
+                                  color: t.textMuted,
+                                  size: 36),
+                            ),
                           )
                         : Container(
                             color: t.surface2,
@@ -559,10 +553,7 @@ class _SearchScreenState extends State<SearchScreen>
             ),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(delay: (35 * i).ms, duration: 350.ms)
-        .scale(
+    ).animate().fadeIn(delay: (35 * i).ms, duration: 350.ms).scale(
           begin: const Offset(0.92, 0.92),
           end: const Offset(1.0, 1.0),
           delay: (35 * i).ms,
@@ -613,8 +604,11 @@ class _SearchScreenState extends State<SearchScreen>
       children: [
         Row(
           children: [
-            Container(width: 3, height: 22,
-                decoration: BoxDecoration(color: t.accent, borderRadius: BorderRadius.circular(2))),
+            Container(
+                width: 3,
+                height: 22,
+                decoration: BoxDecoration(
+                    color: t.accent, borderRadius: BorderRadius.circular(2))),
             const SizedBox(width: 10),
             Text(
               'Browse Categories',

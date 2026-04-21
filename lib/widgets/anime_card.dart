@@ -2,30 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../models/movie.dart';
+import '../models/anime.dart';
 import '../services/theme_service.dart';
-import '../screens/movie_detail_screen.dart';
-import '../screens/tv_detail_screen.dart';
+import '../screens/anime_detail_screen.dart';
 
-class MovieCard extends StatefulWidget {
-  final Movie movie;
+/// A premium anime card matching the exact visual quality of MovieCard.
+class AnimeCard extends StatefulWidget {
+  final Anime anime;
   final double width;
   final double height;
   final int index;
 
-  const MovieCard({
+  const AnimeCard({
     super.key,
-    required this.movie,
+    required this.anime,
     this.width = 140,
     this.height = 210,
     this.index = 0,
   });
 
   @override
-  State<MovieCard> createState() => _MovieCardState();
+  State<AnimeCard> createState() => _AnimeCardState();
 }
 
-class _MovieCardState extends State<MovieCard>
+class _AnimeCardState extends State<AnimeCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _tapController;
   late Animation<double> _scaleAnim;
@@ -52,7 +52,7 @@ class _MovieCardState extends State<MovieCard>
   @override
   Widget build(BuildContext context) {
     final t = ThemeService.instance;
-    final movie = widget.movie;
+    final anime = widget.anime;
 
     return GestureDetector(
       onTapDown: (_) {
@@ -65,9 +65,8 @@ class _MovieCardState extends State<MovieCard>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => movie.isTV
-                ? TVDetailScreen(id: movie.id)
-                : MovieDetailScreen(id: movie.id),
+            builder: (_) =>
+                AnimeDetailScreen(id: anime.id, initialAnime: anime),
           ),
         );
       },
@@ -98,7 +97,7 @@ class _MovieCardState extends State<MovieCard>
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: t.accent
+                            color: const Color(0xFF8B5CF6)
                                 .withValues(alpha: _pressed ? 0.25 : 0.12),
                             blurRadius: 18,
                             spreadRadius: -2,
@@ -113,9 +112,9 @@ class _MovieCardState extends State<MovieCard>
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        child: movie.posterUrl.isNotEmpty
+                        child: anime.coverImage != null
                             ? CachedNetworkImage(
-                                imageUrl: movie.posterUrl,
+                                imageUrl: anime.coverImage!,
                                 width: widget.width,
                                 height: widget.height,
                                 fit: BoxFit.cover,
@@ -149,21 +148,23 @@ class _MovieCardState extends State<MovieCard>
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.star_rounded,
-                                  color: Color(0xFFFFD700), size: 12),
-                              const SizedBox(width: 3),
-                              Text(
-                                movie.rating,
-                                style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const Spacer(),
-                              if (movie.year != 'N/A')
+                              if (anime.averageScore != null) ...[
+                                const Icon(Icons.star_rounded,
+                                    color: Color(0xFFFFD700), size: 12),
+                                const SizedBox(width: 3),
                                 Text(
-                                  movie.year,
+                                  anime.averageScore!.toStringAsFixed(1),
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                              const Spacer(),
+                              if (anime.year != null)
+                                Text(
+                                  '${anime.year}',
                                   style: GoogleFonts.inter(
                                     color: Colors.white70,
                                     fontSize: 10,
@@ -189,25 +190,25 @@ class _MovieCardState extends State<MovieCard>
                       ),
                     ),
 
-                    // TV badge
-                    if (movie.isTV)
+                    // Format badge (TV/Movie/OVA)
+                    if (anime.format != null)
                       Positioned(
                         top: 8,
                         left: 8,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                              horizontal: 7, vertical: 3),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [
-                                Color(0xFF6366F1),
                                 Color(0xFF8B5CF6),
+                                Color(0xFF6366F1),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(7),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF6366F1)
+                                color: const Color(0xFF8B5CF6)
                                     .withValues(alpha: 0.5),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
@@ -215,10 +216,10 @@ class _MovieCardState extends State<MovieCard>
                             ],
                           ),
                           child: Text(
-                            'TV',
+                            anime.format!,
                             style: GoogleFonts.inter(
                               color: Colors.white,
-                              fontSize: 10,
+                              fontSize: 9,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.5,
                             ),
@@ -233,7 +234,7 @@ class _MovieCardState extends State<MovieCard>
 
               // Title
               Text(
-                movie.title,
+                anime.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
@@ -261,7 +262,7 @@ class _MovieCardState extends State<MovieCard>
         borderRadius: BorderRadius.circular(16),
       ),
       child: Center(
-        child: Icon(Icons.movie_outlined,
+        child: Icon(Icons.animation_rounded,
             color: t.textMuted.withValues(alpha: 0.5), size: 36),
       ),
     );

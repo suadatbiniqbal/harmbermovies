@@ -137,7 +137,12 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(NavigationDelegate(
         onPageStarted: (_) {
-          if (mounted) setState(() { _loading = true; _hasError = false; });
+          if (mounted) {
+            setState(() {
+              _loading = true;
+              _hasError = false;
+            });
+          }
         },
         onPageFinished: (_) {
           if (mounted) setState(() => _loading = false);
@@ -145,7 +150,12 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
         },
         onWebResourceError: (error) {
           if (error.isForMainFrame == true) {
-            if (mounted) setState(() { _loading = false; _hasError = true; });
+            if (mounted) {
+              setState(() {
+                _loading = false;
+                _hasError = true;
+              });
+            }
           }
         },
         onNavigationRequest: (request) {
@@ -166,7 +176,10 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
 
   void _reloadPlayer() {
     if (!mounted) return;
-    setState(() { _loading = true; _hasError = false; });
+    setState(() {
+      _loading = true;
+      _hasError = false;
+    });
     _controller.loadRequest(Uri.parse(_url));
     _recordHistory();
   }
@@ -226,7 +239,8 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
               elevation: 0,
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.fullscreen_rounded, color: Colors.white70),
+                  icon: const Icon(Icons.fullscreen_rounded,
+                      color: Colors.white70),
                   tooltip: 'Full Screen',
                   onPressed: () {
                     SystemChrome.setPreferredOrientations([
@@ -243,14 +257,15 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
             child: Stack(
               children: [
                 WebViewWidget(controller: _controller),
-
                 if (isLandscape)
                   Positioned(
                     top: 16,
                     left: 16,
                     child: IconButton(
-                      icon: const Icon(Icons.fullscreen_exit_rounded, color: Colors.white, size: 28),
-                      style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                      icon: const Icon(Icons.fullscreen_exit_rounded,
+                          color: Colors.white, size: 28),
+                      style:
+                          IconButton.styleFrom(backgroundColor: Colors.black54),
                       tooltip: 'Exit Full Screen',
                       onPressed: () {
                         SystemChrome.setPreferredOrientations([
@@ -259,7 +274,6 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
                       },
                     ),
                   ),
-
                 if (_hasError)
                   Container(
                     color: Colors.black,
@@ -276,8 +290,7 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700)),
                           const SizedBox(height: 8),
-                          Text(
-                              'Try a different server or check back later.',
+                          Text('Try a different server or check back later.',
                               style: GoogleFonts.inter(
                                   color: Colors.white54, fontSize: 14)),
                           const SizedBox(height: 20),
@@ -301,7 +314,6 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
                       ),
                     ),
                   ).animate().fadeIn(duration: 400.ms),
-
                 if (_loading)
                   Container(
                     color: Colors.black,
@@ -328,16 +340,13 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
               ],
             ),
           ),
-
           if (!widget.isMovie && !isLandscape)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: const Color(0xFF0A0A0F),
                 border: Border(
-                  top: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.08)),
+                  top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
                 ),
               ),
               child: Row(
@@ -372,7 +381,9 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
                   _episodeButton(
                     icon: Icons.skip_next_rounded,
                     label: 'Next',
-                    onTap: _currentEpisode < widget.totalEpisodes ? _nextEpisode : null,
+                    onTap: _currentEpisode < widget.totalEpisodes
+                        ? _nextEpisode
+                        : null,
                   ),
                 ],
               ),
@@ -391,8 +402,7 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: enabled
               ? Colors.white.withValues(alpha: 0.12)

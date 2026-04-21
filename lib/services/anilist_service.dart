@@ -7,20 +7,31 @@ class AnilistService {
   static final AnilistService instance = AnilistService._();
   AnilistService._();
 
-  static const _url = 'https://graphql.anilist.co/';
+  /// Multiple AniList endpoints — Jio blocks graphql.anilist.co via DNS.
+  /// We try each in order, starting with the last known-working one.
+  static const List<String> _endpoints = [
+    'https://graphql.anilist.co', // Official
+    'https://api.anilist.co', // Alternate official hostname
+    'https://anilist.co/graphql', // Web path (sometimes unblocked)
+  ];
+
   final Map<String, _CacheEntry> _cache = {};
   SharedPreferences? _prefs;
+  int _workingEndpointIndex = 0;
 
   Future<void> _initCache() async {
     if (_prefs != null) return;
     _prefs = await SharedPreferences.getInstance();
+    _workingEndpointIndex = (_prefs!.getInt('anilist_endpoint_idx') ?? 0)
+        .clamp(0, _endpoints.length - 1);
+
     final stored = _prefs!.getString('anilist_v3_cache');
     if (stored != null) {
       try {
         final map = json.decode(stored) as Map<String, dynamic>;
         map.forEach((k, v) {
-          _cache[k] = _CacheEntry(v['data'],
-              timestamp: DateTime.parse(v['timestamp']));
+          _cache[k] =
+              _CacheEntry(v['data'], timestamp: DateTime.parse(v['timestamp']));
         });
       } catch (_) {}
     }
@@ -28,6 +39,13 @@ class AnilistService {
 
   void _saveCache() {
     if (_prefs == null) return;
+    if (_cache.length > 100) {
+      final sorted = _cache.entries.toList()
+        ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
+      for (var i = 0; i < sorted.length - 100; i++) {
+        _cache.remove(sorted[i].key);
+      }
+    }
     final map = _cache.map((k, v) => MapEntry(k, {
           'data': v.data,
           'timestamp': v.timestamp.toIso8601String(),
@@ -35,33 +53,54 @@ class AnilistService {
     _prefs!.setString('anilist_v3_cache', json.encode(map));
   }
 
+  /// Posts a GraphQL query with multi-endpoint proxy fallback.
   Future<dynamic> _postQuery(String query,
       {Map<String, dynamic>? variables}) async {
-    for (int i = 0; i < 3; i++) {
-      try {
-        final res = await http
-            .post(
-              Uri.parse(_url),
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-              },
-              body: json.encode({
-                'query': query,
-                'variables': variables ?? {},
-              }),
-            )
-            .timeout(const Duration(seconds: 15));
+    await _initCache();
 
-        if (res.statusCode == 200) {
-          final decoded = json.decode(res.body);
-          return decoded['data'];
+    // Build priority list starting with last-known working endpoint
+    final indices = List<int>.generate(_endpoints.length, (i) => i);
+    if (_workingEndpointIndex != 0) {
+      indices.remove(_workingEndpointIndex);
+      indices.insert(0, _workingEndpointIndex);
+    }
+
+    for (final idx in indices) {
+      for (int attempt = 0; attempt < 2; attempt++) {
+        try {
+          final res = await http
+              .post(
+                Uri.parse(_endpoints[idx]),
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                },
+                body: json.encode({
+                  'query': query,
+                  'variables': variables ?? {},
+                }),
+              )
+              .timeout(const Duration(seconds: 20));
+
+          if (res.statusCode == 200) {
+            // Remember this working endpoint
+            if (idx != _workingEndpointIndex) {
+              _workingEndpointIndex = idx;
+              _prefs?.setInt('anilist_endpoint_idx', idx);
+            }
+            final decoded = json.decode(res.body);
+            return decoded['data'];
+          }
+
+          if (res.statusCode == 429) {
+            await Future.delayed(
+                Duration(milliseconds: 1000 * (attempt + 1) * (idx + 1)));
+          }
+        } catch (_) {
+          if (attempt == 0) {
+            await Future.delayed(Duration(milliseconds: 600 * (idx + 1)));
+          }
         }
-        if (res.statusCode == 429) {
-          await Future.delayed(Duration(milliseconds: 800 * (i + 1)));
-        }
-      } catch (_) {
-        if (i < 2) await Future.delayed(Duration(milliseconds: 600 * (i + 1)));
       }
     }
     return null;
@@ -110,7 +149,6 @@ class AnilistService {
     ''';
     final data = await _postQuery(query);
     if (data == null) {
-      // Return stale cache if available
       if (_cache.containsKey(cacheKey)) {
         return (_cache[cacheKey]!.data as List)
             .map((j) => Anime.fromJson(j))
@@ -197,7 +235,6 @@ class AnilistService {
     await _initCache();
     final cacheKey = 'details_$id';
 
-    // Return cached immediately, always try to refresh in background
     Anime? cached;
     if (_cache.containsKey(cacheKey)) {
       cached = Anime.fromJson(_cache[cacheKey]!.data);
@@ -280,7 +317,6 @@ class AnilistService {
     final data = await _postQuery(query, variables: {'id': id});
 
     if (data == null || data['Media'] == null) {
-      // Return stale cached data if available
       return cached;
     }
 
@@ -327,6 +363,5 @@ class _CacheEntry {
   bool get isValid => DateTime.now().difference(timestamp).inHours < 24;
 
   // 30 minutes for search cache
-  bool get isSearchValid =>
-      DateTime.now().difference(timestamp).inMinutes < 30;
+  bool get isSearchValid => DateTime.now().difference(timestamp).inMinutes < 30;
 }

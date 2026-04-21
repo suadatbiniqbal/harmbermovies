@@ -26,7 +26,7 @@ class HistoryService extends ChangeNotifier {
         })
         .whereType<HistoryItem>()
         .toList();
-    
+
     // Sort by timestamp descending
     _items.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     notifyListeners();

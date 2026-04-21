@@ -1,7 +1,7 @@
 name: harmber_movies
-description: Harmber Movies - Google TV style streaming app
+description: Harmber Movies - Movie style streaming app
 publish_to: 'none'
-version: 1.0.2
+version: 1.0.4
 
 environment:
   sdk: ">=3.3.0 <4.0.0"

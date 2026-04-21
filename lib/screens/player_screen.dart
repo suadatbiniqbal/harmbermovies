@@ -161,7 +161,12 @@ class _PlayerScreenState extends State<PlayerScreen>
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(NavigationDelegate(
         onPageStarted: (_) {
-          if (mounted) setState(() { _loading = true; _hasError = false; });
+          if (mounted) {
+            setState(() {
+              _loading = true;
+              _hasError = false;
+            });
+          }
         },
         onPageFinished: (_) {
           if (mounted) setState(() => _loading = false);
@@ -170,7 +175,12 @@ class _PlayerScreenState extends State<PlayerScreen>
         onWebResourceError: (error) {
           // Only treat as fatal error for main frame, not sub-resources
           if (error.isForMainFrame == true) {
-            if (mounted) setState(() { _loading = false; _hasError = true; });
+            if (mounted) {
+              setState(() {
+                _loading = false;
+                _hasError = true;
+              });
+            }
           }
         },
         onNavigationRequest: (request) {
@@ -193,7 +203,10 @@ class _PlayerScreenState extends State<PlayerScreen>
   // Reload with a fresh URL (episode/server change), resetting error state
   void _reloadPlayer() {
     if (!mounted) return;
-    setState(() { _loading = true; _hasError = false; });
+    setState(() {
+      _loading = true;
+      _hasError = false;
+    });
     _controller.loadRequest(Uri.parse(_url));
     _recordHistory();
   }
@@ -221,7 +234,9 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   String get _currentTitle {
-    if (widget.isTV) return '${widget.title} S$_currentSeason E$_currentEpisode';
+    if (widget.isTV) {
+      return '${widget.title} S$_currentSeason E$_currentEpisode';
+    }
     return widget.title;
   }
 
@@ -256,7 +271,8 @@ class _PlayerScreenState extends State<PlayerScreen>
               elevation: 0,
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.fullscreen_rounded, color: Colors.white70),
+                  icon: const Icon(Icons.fullscreen_rounded,
+                      color: Colors.white70),
                   tooltip: 'Full Screen',
                   onPressed: () {
                     SystemChrome.setPreferredOrientations([
@@ -312,8 +328,10 @@ class _PlayerScreenState extends State<PlayerScreen>
                     top: 16,
                     left: 16,
                     child: IconButton(
-                      icon: const Icon(Icons.fullscreen_exit_rounded, color: Colors.white, size: 28),
-                      style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                      icon: const Icon(Icons.fullscreen_exit_rounded,
+                          color: Colors.white, size: 28),
+                      style:
+                          IconButton.styleFrom(backgroundColor: Colors.black54),
                       tooltip: 'Exit Full Screen',
                       onPressed: () {
                         SystemChrome.setPreferredOrientations([
@@ -339,8 +357,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700)),
                           const SizedBox(height: 8),
-                          Text(
-                              'Try a different server or check back later.',
+                          Text('Try a different server or check back later.',
                               style: GoogleFonts.inter(
                                   color: Colors.white54, fontSize: 14)),
                           const SizedBox(height: 20),
@@ -391,16 +408,13 @@ class _PlayerScreenState extends State<PlayerScreen>
               ],
             ),
           ),
-
           if (widget.isTV && !isLandscape)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: const Color(0xFF0A0A0F),
                 border: Border(
-                  top: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.08)),
+                  top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
                 ),
               ),
               child: Row(
@@ -454,8 +468,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: enabled
               ? Colors.white.withValues(alpha: 0.12)

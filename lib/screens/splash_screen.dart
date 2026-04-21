@@ -33,39 +33,11 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  bool _hasError = false;
+  final bool _hasError = false;
 
   Future<void> _startSplash() async {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              ),
-              const SizedBox(width: 12),
-              Text('Starting Harmber...', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-            ],
-          ),
-          backgroundColor: const Color.fromARGB(255, 255, 255, 255).withValues(alpha: 0.9),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.only(bottom: 30, left: 20, right: 20),
-          elevation: 0,
-        ),
-      );
-    }
-
-    await Future.delayed(const Duration(milliseconds: 1400));
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).clearSnackBars();
-      _navigateToApp();
-    }
+    await Future.delayed(const Duration(milliseconds: 1800));
+    if (mounted) _navigateToApp();
   }
 
   void _navigateToApp() {
@@ -198,7 +170,8 @@ class _SplashScreenState extends State<SplashScreen>
                     height: 32,
                     child: CircularProgressIndicator(
                       strokeWidth: 3,
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
                     ),
                   ).animate().fadeIn(duration: 500.ms),
               ],
