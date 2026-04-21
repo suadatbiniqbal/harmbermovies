@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 import '../models/movie.dart';
@@ -138,7 +137,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                             ),
                         ],
                       ),
-                    ).animate().fadeIn(duration: 400.ms),
+                    ),
 
                     const SizedBox(height: 16),
 
@@ -162,6 +161,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                                 crossAxisSpacing: 12,
                                 mainAxisSpacing: 16,
                               ),
+                              cacheExtent: 400,
                               itemCount: filtered.length,
                               itemBuilder: (_, i) =>
                                   _WatchlistCard(
@@ -250,9 +250,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
               color: t.accent,
               size: 52,
             ),
-          )
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .scaleXY(end: 1.06, duration: 2200.ms, curve: Curves.easeInOut),
+          ),
           const SizedBox(height: 24),
           Text(
             isFiltered ? 'Nothing here yet' : 'Nothing saved yet',
@@ -272,7 +270,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
             ),
           ),
         ],
-      ).animate().fadeIn(duration: 600.ms),
+      ),
     );
   }
 
@@ -506,16 +504,7 @@ class _WatchlistCard extends StatelessWidget {
           ),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(delay: (40 * index).ms, duration: 350.ms)
-        .scale(
-          begin: const Offset(0.92, 0.92),
-          end: const Offset(1.0, 1.0),
-          delay: (40 * index).ms,
-          duration: 350.ms,
-          curve: Curves.easeOutCubic,
-        );
+    );
   }
 
   Widget _shimmerBox(ThemeService t) {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 import '../models/anime.dart';
@@ -362,6 +361,15 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
                       ? Colors.white
                       : Colors.white.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
+                  boxShadow: _heroIndex == i
+                      ? [
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            blurRadius: 6,
+                            spreadRadius: 0,
+                          ),
+                        ]
+                      : null,
                 ),
               ),
             ),
@@ -482,15 +490,9 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
                                 letterSpacing: 0.5)),
                       ),
                   ],
-                )
-                    .animate()
-                    .fadeIn(delay: 100.ms, duration: 500.ms)
-                    .slideX(begin: -0.05),
+                ),
                 const SizedBox(height: 12),
-                _heroTitle(anime)
-                    .animate()
-                    .fadeIn(delay: 200.ms, duration: 600.ms)
-                    .slideY(begin: 0.15, curve: Curves.easeOutCubic),
+                _heroTitle(anime),
                 const SizedBox(height: 18),
                 Row(
                   children: [
@@ -508,10 +510,7 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
                       onTap: () => _navigateToDetail(anime),
                     ),
                   ],
-                )
-                    .animate()
-                    .fadeIn(delay: 450.ms, duration: 500.ms)
-                    .slideY(begin: 0.1),
+                ),
               ],
             ),
           ),
@@ -546,20 +545,34 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: filled ? Colors.white : Colors.white.withValues(alpha: 0.12),
+          gradient: filled
+              ? const LinearGradient(
+                  colors: [Color(0xFF8B5CF6), Color(0xFF6366F1)],
+                )
+              : null,
+          color: filled ? null : Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
           border: filled
               ? null
               : Border.all(color: Colors.white.withValues(alpha: 0.25)),
+          boxShadow: filled
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.45),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: filled ? Colors.black : Colors.white, size: 20),
+            Icon(icon, color: Colors.white, size: 20),
             const SizedBox(width: 8),
             Text(label,
                 style: GoogleFonts.inter(
-                    color: filled ? Colors.black : Colors.white,
+                    color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w700)),
           ],

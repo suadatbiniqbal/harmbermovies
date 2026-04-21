@@ -36,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen>
   final bool _hasError = false;
 
   Future<void> _startSplash() async {
-    await Future.delayed(const Duration(milliseconds: 1800));
+    await Future.delayed(const Duration(milliseconds: 1200));
     if (mounted) _navigateToApp();
   }
 

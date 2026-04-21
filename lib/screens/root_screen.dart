@@ -1,5 +1,5 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/theme_service.dart';
 import 'home_screen.dart';
@@ -57,6 +57,7 @@ class _RootScreenState extends State<RootScreen> {
             physics: const NeverScrollableScrollPhysics(),
             children: _screens,
           ),
+          extendBody: true,
           bottomNavigationBar: _buildBottomBar(t),
         );
       },
@@ -65,37 +66,54 @@ class _RootScreenState extends State<RootScreen> {
 
   Widget _buildBottomBar(ThemeService t) {
     final items = [
-      _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home'),
-      _NavItem(icon: Icons.animation_outlined, activeIcon: Icons.animation_rounded, label: 'Anime'),
-      _NavItem(icon: Icons.search_rounded, activeIcon: Icons.search_rounded, label: 'Search'),
-      _NavItem(icon: Icons.bookmark_border_rounded, activeIcon: Icons.bookmark_rounded, label: 'Watchlist'),
-      _NavItem(icon: Icons.settings_outlined, activeIcon: Icons.settings_rounded, label: 'Settings'),
+      _NavItem(
+          icon: Icons.home_outlined,
+          activeIcon: Icons.home_rounded,
+          label: 'Home'),
+      _NavItem(
+          icon: Icons.animation_outlined,
+          activeIcon: Icons.animation_rounded,
+          label: 'Anime'),
+      _NavItem(
+          icon: Icons.search_rounded,
+          activeIcon: Icons.search_rounded,
+          label: 'Search'),
+      _NavItem(
+          icon: Icons.bookmark_border_rounded,
+          activeIcon: Icons.bookmark_rounded,
+          label: 'Watchlist'),
+      _NavItem(
+          icon: Icons.settings_outlined,
+          activeIcon: Icons.settings_rounded,
+          label: 'Settings'),
     ];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: t.isDark
-            ? Colors.black.withValues(alpha: 0.92)
-            : Colors.white.withValues(alpha: 0.96),
-        border: Border(
-          top: BorderSide(color: t.border.withValues(alpha: 0.5), width: 0.5),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: t.isDark ? 0.3 : 0.07),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: t.isDark
+                ? Colors.black.withValues(alpha: 0.72)
+                : Colors.white.withValues(alpha: 0.82),
+            border: Border(
+              top: BorderSide(
+                  color: t.isDark
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.black.withValues(alpha: 0.06),
+                  width: 0.5),
+            ),
           ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Row(
-            children: List.generate(
-              items.length,
-              (i) => Expanded(child: _buildNavItem(items[i], i, t)),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Row(
+                children: List.generate(
+                  items.length,
+                  (i) => Expanded(child: _buildNavItem(items[i], i, t)),
+                ),
+              ),
             ),
           ),
         ),
@@ -122,25 +140,45 @@ class _RootScreenState extends State<RootScreen> {
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
                 color: selected
                     ? activeColor.withValues(alpha: 0.12)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                selected ? item.activeIcon : item.icon,
-                color: selected ? activeColor : inactiveColor,
-                size: 22,
-              )
-                  .animate(target: selected ? 1 : 0)
-                  .scale(
-                    begin: const Offset(0.85, 0.85),
-                    end: const Offset(1.0, 1.0),
-                    duration: 200.ms,
-                    curve: Curves.easeOutBack,
-                  ),
+              child: AnimatedScale(
+                scale: selected ? 1.0 : 0.85,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutBack,
+                child: Icon(
+                  selected ? item.activeIcon : item.icon,
+                  color: selected ? activeColor : inactiveColor,
+                  size: 22,
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
+            // Glow dot indicator
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              width: selected ? 5 : 0,
+              height: selected ? 5 : 0,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: activeColor,
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: activeColor.withValues(alpha: 0.6),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ]
+                    : null,
+              ),
             ),
             const SizedBox(height: 2),
             AnimatedDefaultTextStyle(

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/theme_service.dart';
@@ -12,7 +10,11 @@ class AdBannerContainer extends StatefulWidget {
   State<AdBannerContainer> createState() => _AdBannerContainerState();
 }
 
-class _AdBannerContainerState extends State<AdBannerContainer> {
+class _AdBannerContainerState extends State<AdBannerContainer>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   WebViewController? _controller;
   bool _isLoading = true;
 
@@ -104,6 +106,7 @@ class _AdBannerContainerState extends State<AdBannerContainer> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final t = ThemeService.instance;
 
     Widget buildWebView() {
@@ -187,14 +190,10 @@ class _AdBannerContainerState extends State<AdBannerContainer> {
                       child: Stack(
                         children: [
                           if (_isLoading)
-                            Shimmer.fromColors(
-                              baseColor: t.surface2,
-                              highlightColor: t.surface,
-                              child: Container(
-                                width: 320,
-                                height: 50,
-                                color: Colors.white,
-                              ),
+                            Container(
+                              width: 320,
+                              height: 50,
+                              color: t.surface2,
                             ),
                           AnimatedOpacity(
                             opacity: _isLoading ? 0.0 : 1.0,
@@ -208,8 +207,7 @@ class _AdBannerContainerState extends State<AdBannerContainer> {
                   ),
                 ],
               ),
-            ).animate().fadeIn(duration: 600.ms).scale(
-                begin: const Offset(0.95, 0.95), curve: Curves.easeOutBack),
+            ),
           ],
         ),
       ),

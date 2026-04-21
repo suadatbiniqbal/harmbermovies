@@ -14,9 +14,9 @@ import 'screens/splash_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Give Flutter 400MB of RAM for image caching so full-res images don't evict
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 400;
-  PaintingBinding.instance.imageCache.maximumSize = 2500;
+  // Give Flutter 200MB of RAM for image caching (balanced for perf & memory)
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 200;
+  PaintingBinding.instance.imageCache.maximumSize = 1000;
 
   // Init local services
   await ThemeService.instance.init();

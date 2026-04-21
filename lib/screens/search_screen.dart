@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/movie.dart';
 import '../models/anime.dart';
@@ -253,7 +252,7 @@ class _SearchScreenState extends State<SearchScreen>
                   ),
                 ),
               ),
-            ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.05),
+            ),
 
             // ── Tab bar (always visible) ──
             Padding(
@@ -325,9 +324,7 @@ class _SearchScreenState extends State<SearchScreen>
               ),
               child:
                   Icon(Icons.search_off_rounded, color: t.textMuted, size: 48),
-            )
-                .animate(onPlay: (c) => c.repeat(reverse: true))
-                .scaleXY(end: 1.06, duration: 1800.ms, curve: Curves.easeInOut),
+            ),
             const SizedBox(height: 20),
             Text('No results found',
                 style: GoogleFonts.inter(
@@ -336,13 +333,14 @@ class _SearchScreenState extends State<SearchScreen>
             Text('Try a different search term',
                 style: GoogleFonts.inter(color: t.textMuted, fontSize: 14)),
           ],
-        ).animate().fadeIn(duration: 400.ms),
+        ),
       );
     }
 
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       physics: const BouncingScrollPhysics(),
+      cacheExtent: 400,
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 136,
         childAspectRatio: 0.52,
@@ -553,13 +551,7 @@ class _SearchScreenState extends State<SearchScreen>
             ),
         ],
       ),
-    ).animate().fadeIn(delay: (35 * i).ms, duration: 350.ms).scale(
-          begin: const Offset(0.92, 0.92),
-          end: const Offset(1.0, 1.0),
-          delay: (35 * i).ms,
-          duration: 350.ms,
-          curve: Curves.easeOutCubic,
-        );
+    );
   }
 
   Widget _buildGenresGrid(ThemeService t) {
@@ -673,10 +665,7 @@ class _SearchScreenState extends State<SearchScreen>
                   ],
                 ),
               ),
-            )
-                .animate()
-                .fadeIn(delay: (40 * i).ms, duration: 400.ms)
-                .slideY(begin: 0.1);
+            );
           }),
         ),
       ],
@@ -785,7 +774,7 @@ class _GenreResultsScreen extends StatelessWidget {
                               color: t.textMuted, fontSize: 11)),
                     ],
                   ),
-                ).animate().fadeIn(delay: (40 * i).ms, duration: 300.ms);
+                );
               },
             ),
     );

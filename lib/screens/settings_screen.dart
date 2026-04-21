@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/theme_service.dart';
@@ -73,7 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
                   ),
-                ).animate().fadeIn(duration: 400.ms),
+                ),
                 const SizedBox(height: 24),
 
                 // App branding card
@@ -172,10 +171,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                     ],
                   ),
-                )
-                    .animate()
-                    .fadeIn(delay: 100.ms, duration: 500.ms)
-                    .slideY(begin: 0.05),
+                ),
                 const SizedBox(height: 16),
                 const AdBannerContainer(),
                 const SizedBox(height: 16),
@@ -246,15 +242,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         ],
                       ),
                     ),
-                  )
-                      .animate()
-                      .fadeIn(duration: 500.ms)
-                      .slideY(begin: -0.1)
-                      .shimmer(
-                          delay: 500.ms,
-                          duration: 1500.ms,
-                          color:
-                              const Color(0xFF4CAF50).withValues(alpha: 0.1)),
+                  ),
                   const SizedBox(height: 16),
                 ],
 
@@ -395,7 +383,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           letterSpacing: 1.2,
         ),
       ),
-    ).animate().fadeIn(delay: (80 * index).ms, duration: 400.ms);
+    );
   }
 
   Widget _settingsCard(
@@ -464,9 +452,6 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
         ),
       ),
-    )
-        .animate()
-        .fadeIn(delay: (60 * index).ms, duration: 400.ms)
-        .slideX(begin: 0.03, curve: Curves.easeOutCubic);
+    );
   }
 }

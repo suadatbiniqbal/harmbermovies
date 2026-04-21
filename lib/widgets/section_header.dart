@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/theme_service.dart';
 
@@ -22,6 +21,23 @@ class SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 28, 12, 14),
       child: Row(
         children: [
+          // Accent glow line
+          Container(
+            width: 3,
+            height: 22,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              color: t.accent,
+              borderRadius: BorderRadius.circular(2),
+              boxShadow: [
+                BoxShadow(
+                  color: t.accent.withValues(alpha: 0.4),
+                  blurRadius: 6,
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+          ),
           if (icon != null) ...[
             Container(
               padding: const EdgeInsets.all(6),
@@ -74,6 +90,6 @@ class SectionHeader extends StatelessWidget {
             ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.02);
+    );
   }
 }
