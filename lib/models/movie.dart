@@ -1,3 +1,5 @@
+import '../services/tmdb_service.dart';
+
 class Movie {
   final int id;
   final String title;
@@ -52,19 +54,19 @@ class Movie {
   String get posterUrl {
     if (posterPath == null || posterPath!.isEmpty) return '';
     if (posterPath!.startsWith('http')) return posterPath!;
-    return 'https://image.tmdb.org/t/p/w500$posterPath';
+    return '${TmdbService.instance.imageCdnBase}/w500$posterPath';
   }
 
   String get backdropUrl {
     if (backdropPath == null || backdropPath!.isEmpty) return '';
     if (backdropPath!.startsWith('http')) return backdropPath!;
-    return 'https://image.tmdb.org/t/p/original$backdropPath';
+    return '${TmdbService.instance.imageCdnBase}/original$backdropPath';
   }
 
   String get logoUrl {
     if (logoPath == null || logoPath!.isEmpty) return '';
     if (logoPath!.startsWith('http')) return logoPath!;
-    return 'https://image.tmdb.org/t/p/w500$logoPath';
+    return '${TmdbService.instance.imageCdnBase}/w500$logoPath';
   }
 
   String get year => releaseDate != null && releaseDate!.length >= 4
@@ -207,7 +209,7 @@ class CastMember {
   });
 
   String get profileUrl =>
-      profilePath != null ? 'https://image.tmdb.org/t/p/w185$profilePath' : '';
+      profilePath != null ? '${TmdbService.instance.imageCdnBase}/w185$profilePath' : '';
 
   factory CastMember.fromJson(Map<String, dynamic> json) => CastMember(
         id: json['id'],
@@ -237,7 +239,7 @@ class Season {
   });
 
   String get posterUrl =>
-      posterPath != null ? 'https://image.tmdb.org/t/p/w342$posterPath' : '';
+      posterPath != null ? '${TmdbService.instance.imageCdnBase}/w342$posterPath' : '';
 
   factory Season.fromJson(Map<String, dynamic> json) => Season(
         id: json['id'] ?? 0,
@@ -274,7 +276,7 @@ class Episode {
   });
 
   String get stillUrl =>
-      stillPath != null ? 'https://image.tmdb.org/t/p/w500$stillPath' : '';
+      stillPath != null ? '${TmdbService.instance.imageCdnBase}/w500$stillPath' : '';
 
   factory Episode.fromJson(Map<String, dynamic> json) => Episode(
         id: json['id'] ?? 0,
@@ -297,7 +299,7 @@ class ProductionCompany {
   ProductionCompany({required this.id, required this.name, this.logoPath});
 
   String get logoUrl =>
-      logoPath != null ? 'https://image.tmdb.org/t/p/w200$logoPath' : '';
+      logoPath != null ? '${TmdbService.instance.imageCdnBase}/w200$logoPath' : '';
 
   factory ProductionCompany.fromJson(Map<String, dynamic> json) =>
       ProductionCompany(

@@ -73,7 +73,7 @@ class _ArtistScreenState extends State<ArtistScreen> {
     final name = _person['name'] ?? 'Unknown';
     final profilePath = _person['profile_path'];
     final profileUrl = profilePath != null
-        ? 'https://image.tmdb.org/t/p/w500$profilePath'
+        ? '${TmdbService.instance.imageCdnBase}/w500$profilePath'
         : '';
     final birthday = _person['birthday'] as String?;
     final deathday = _person['deathday'] as String?;

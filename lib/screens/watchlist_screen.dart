@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../models/movie.dart';
 import '../services/theme_service.dart';
 import '../services/watchlist_service.dart';
+import '../services/tmdb_service.dart';
 import '../widgets/ad_banner.dart';
 import 'movie_detail_screen.dart';
 import 'tv_detail_screen.dart';
@@ -41,7 +42,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
   String _resolveImageUrl(String path) {
     if (path.isEmpty) return '';
     if (path.startsWith('http')) return path;
-    return 'https://image.tmdb.org/t/p/w500$path';
+    return '${TmdbService.instance.imageCdnBase}/w500$path';
   }
 
   List<Movie> _filterItems(List<Movie> items, int tabIndex) {

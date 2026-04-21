@@ -8,6 +8,7 @@ import 'firebase_options.dart';
 import 'services/theme_service.dart';
 import 'services/watchlist_service.dart';
 import 'services/history_service.dart';
+import 'services/tmdb_service.dart';
 import 'services/fcm_service.dart';
 import 'screens/splash_screen.dart';
 
@@ -23,8 +24,8 @@ void main() async {
   await WatchlistService.instance.init();
   await HistoryService.instance.init();
 
-  // Load ISP config for TMDB
-  // (Removed due to Jio DoH removal)
+  // Load ISP config for TMDB — probe image CDN in background (non-blocking)
+  TmdbService.instance.probeImageCdn();
 
   // Firebase (safe init)
   try {

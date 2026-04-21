@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'root_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -12,8 +14,13 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late AnimationController _rotateController;
+
+  static const String _adUrl =
+      'https://www.profitablecpmratenetwork.com/hpp7szbwc?key=e427111ef791f9b6b39b05710a5e3ca2';
+  static const String _lastAdKey = 'last_ad_shown_time';
+  static const int _adCooldownHours = 6;
 
   @override
   void initState() {
@@ -24,7 +31,7 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(seconds: 20),
     )..repeat();
 
-    _startSplash();
+    _startSplashFlow();
   }
 
   @override
@@ -33,11 +40,53 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  final bool _hasError = false;
+  Future<bool> _shouldShowAd() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastShown = prefs.getInt(_lastAdKey) ?? 0;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final hoursSinceLastAd =
+        (now - lastShown) / (1000 * 60 * 60);
+    return hoursSinceLastAd >= _adCooldownHours;
+  }
 
-  Future<void> _startSplash() async {
-    await Future.delayed(const Duration(milliseconds: 1200));
+  Future<void> _markAdShown() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_lastAdKey, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  Future<void> _startSplashFlow() async {
+    // Phase 1: Show splash animation for 2.5s
+    await Future.delayed(const Duration(milliseconds: 2500));
+    if (!mounted) return;
+
+    // Phase 2: Check if we should show ad (6-hour cooldown)
+    final showAd = await _shouldShowAd();
+
+    if (showAd) {
+      try {
+        final uri = Uri.parse(_adUrl);
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        await _markAdShown();
+        _showToast('Opening Sponser Page Support us and  Wait for the page to load, then come back and enjoy the show!');
+      } catch (_) {
+        // If browser launch fails, just continue
+      }
+
+      // Wait a bit before navigating to app
+      await Future.delayed(const Duration(milliseconds: 1500));
+    }
+
     if (mounted) _navigateToApp();
+  }
+
+  void _showToast(String msg) {
+    Fluttertoast.showToast(
+      msg: msg,
+      backgroundColor: const Color(0xFF1A1A2E),
+      textColor: Colors.white,
+      gravity: ToastGravity.BOTTOM,
+      fontSize: 13,
+    );
   }
 
   void _navigateToApp() {
@@ -53,6 +102,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -62,7 +113,7 @@ class _SplashScreenState extends State<SplashScreen>
             animation: _rotateController,
             builder: (_, __) => CustomPaint(
               painter: _OrbsPainter(_rotateController.value),
-              size: MediaQuery.of(context).size,
+              size: size,
             ),
           ),
 
@@ -80,12 +131,12 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // Main content
+          // Centered logo and text
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Logo without glow
+                // Logo
                 ClipRRect(
                   borderRadius: BorderRadius.circular(28),
                   child: Image.asset(
@@ -99,28 +150,19 @@ class _SplashScreenState extends State<SplashScreen>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(28),
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                          colors: [
+                            Color(0xFF6366F1),
+                            Color(0xFF8B5CF6),
+                          ],
                         ),
                       ),
                       child: const Icon(Icons.play_arrow_rounded,
                           color: Colors.white, size: 60),
                     ),
                   ),
-                )
-                    .animate()
-                    .fadeIn(duration: 400.ms, curve: Curves.easeOut)
-                    .scale(
-                      begin: const Offset(0.3, 0.3),
-                      end: const Offset(1.0, 1.0),
-                      duration: 800.ms,
-                      curve: Curves.elasticOut,
-                    )
-                    .then()
-                    .shakeX(amount: 2, duration: 400.ms)
-                    .then()
-                    .shimmer(duration: 800.ms, color: Colors.white24),
+                ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
 
                 // App name
                 Text(
@@ -131,12 +173,9 @@ class _SplashScreenState extends State<SplashScreen>
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
                   ),
-                )
-                    .animate()
-                    .fadeIn(delay: 400.ms, duration: 600.ms)
-                    .slideY(begin: 0.5, curve: Curves.easeOutCubic),
+                ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
 
                 // Tagline
                 Text(
@@ -147,34 +186,26 @@ class _SplashScreenState extends State<SplashScreen>
                     fontWeight: FontWeight.w400,
                     letterSpacing: 1.5,
                   ),
-                )
-                    .animate()
-                    .fadeIn(delay: 700.ms, duration: 600.ms)
-                    .slideY(begin: 0.3),
-
-                const SizedBox(height: 48),
-
-                // iOS-style loader or error text
-                if (_hasError)
-                  Text(
-                    'No Internet Connection',
-                    style: GoogleFonts.inter(
-                      color: Colors.redAccent,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ).animate().fadeIn(duration: 400.ms)
-                else
-                  const SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
-                    ),
-                  ).animate().fadeIn(duration: 500.ms),
+                ),
               ],
+            ),
+          ),
+
+          // Loading spinner at bottom
+          Positioned(
+            bottom: size.height * 0.18,
+            left: 0,
+            right: 0,
+            child: const Center(
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
             ),
           ),
         ],
@@ -208,7 +239,8 @@ class _OrbsPainter extends CustomPainter {
             const Color(0xFF6366F1).withValues(alpha: 0.08),
             Colors.transparent,
           ],
-        ).createShader(Rect.fromCircle(center: p1, radius: size.width * 0.35)),
+        ).createShader(
+            Rect.fromCircle(center: p1, radius: size.width * 0.35)),
     );
 
     // Orb 2 - blue
@@ -225,7 +257,8 @@ class _OrbsPainter extends CustomPainter {
             const Color(0xFF3B82F6).withValues(alpha: 0.06),
             Colors.transparent,
           ],
-        ).createShader(Rect.fromCircle(center: p2, radius: size.width * 0.3)),
+        ).createShader(
+            Rect.fromCircle(center: p2, radius: size.width * 0.3)),
     );
 
     // Orb 3 - teal
@@ -242,7 +275,8 @@ class _OrbsPainter extends CustomPainter {
             const Color(0xFF14B8A6).withValues(alpha: 0.05),
             Colors.transparent,
           ],
-        ).createShader(Rect.fromCircle(center: p3, radius: size.width * 0.25)),
+        ).createShader(
+            Rect.fromCircle(center: p3, radius: size.width * 0.25)),
     );
   }
 

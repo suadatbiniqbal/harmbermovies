@@ -7,12 +7,12 @@ class AnilistService {
   static final AnilistService instance = AnilistService._();
   AnilistService._();
 
-  /// Multiple AniList endpoints — Jio blocks graphql.anilist.co via DNS.
+  /// Multiple AniList endpoints — Jio/Airtel block graphql.anilist.co via DNS/DPI.
   /// We try each in order, starting with the last known-working one.
   static const List<String> _endpoints = [
-    'https://graphql.anilist.co', // Official
-    'https://api.anilist.co', // Alternate official hostname
-    'https://anilist.co/graphql', // Web path (sometimes unblocked)
+    'https://graphql.anilist.co',       // Official
+    'https://anilist.co/graphql',       // Web path (sometimes unblocked)
+    'https://api.anilist.co',           // Alternate official hostname
   ];
 
   final Map<String, _CacheEntry> _cache = {};
@@ -54,6 +54,7 @@ class AnilistService {
   }
 
   /// Posts a GraphQL query with multi-endpoint proxy fallback.
+  /// Shorter timeout (8s) per endpoint for faster failover.
   Future<dynamic> _postQuery(String query,
       {Map<String, dynamic>? variables}) async {
     await _initCache();
@@ -80,7 +81,7 @@ class AnilistService {
                   'variables': variables ?? {},
                 }),
               )
-              .timeout(const Duration(seconds: 20));
+              .timeout(const Duration(seconds: 8));
 
           if (res.statusCode == 200) {
             // Remember this working endpoint
@@ -94,11 +95,11 @@ class AnilistService {
 
           if (res.statusCode == 429) {
             await Future.delayed(
-                Duration(milliseconds: 1000 * (attempt + 1) * (idx + 1)));
+                Duration(milliseconds: 800 * (attempt + 1) * (idx + 1)));
           }
         } catch (_) {
           if (attempt == 0) {
-            await Future.delayed(Duration(milliseconds: 600 * (idx + 1)));
+            await Future.delayed(Duration(milliseconds: 400 * (idx + 1)));
           }
         }
       }

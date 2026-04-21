@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/history.dart';
 import '../services/theme_service.dart';
+import '../services/tmdb_service.dart';
 import '../screens/movie_detail_screen.dart';
 import '../screens/tv_detail_screen.dart';
 import '../screens/anime_detail_screen.dart';
@@ -16,7 +17,7 @@ class HistoryCard extends StatelessWidget {
   String? _resolveImageUrl(String? path) {
     if (path == null || path.isEmpty) return null;
     if (path.startsWith('http')) return path;
-    return 'https://image.tmdb.org/t/p/w780$path';
+    return '${TmdbService.instance.imageCdnBase}/w780$path';
   }
 
   @override

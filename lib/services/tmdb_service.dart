@@ -10,19 +10,37 @@ class TmdbService {
 
   static const _apiKey = '8265bd1679663a7ea12ac168da84d2e8';
 
-  /// Proxy fallback chain: try each in order until one works.
-  /// api.tmdb.org is the official alternate hostname that Jio sometimes doesn't block.
-  /// tmdb.saurav.dev is a community reverse proxy that also works when the official ones are blocked.
+  /// Proxy fallback chain for Jio/Airtel/BSNL users in India.
+  /// These ISPs block api.themoviedb.org at DNS/DPI level.
+  ///
+  /// Priority:
+  /// 1. Official API (works on most networks)
+  /// 2. Official alternate hostname
+  /// 3. Community CORS proxy (no API key needed but we still pass it)
+  /// 4-6. Public TMDB proxy mirrors that bypass Indian ISP blocks
   static const List<String> _baseUrls = [
     'https://api.themoviedb.org/3',
     'https://api.tmdb.org/3',
+    'https://tmdb-proxy.cubari.moe/3',
+    'https://cinemeta-catalogs.stremio.com/tmdb/3',
     'https://tmdb.saurav.dev/3',
+  ];
+
+  /// Image CDN also gets blocked by Jio.
+  /// We use the original + an alternative CDN.
+  static const List<String> _imageCdns = [
+    'https://image.tmdb.org/t/p',
+    'https://media.themoviedb.org/t/p',
   ];
 
   final Map<String, _CacheEntry> _cache = {};
   final _client = http.Client();
   SharedPreferences? _prefs;
   int _workingBaseIndex = 0;
+  int _workingImageCdnIndex = 0;
+
+  /// Returns the current working image CDN base URL.
+  String get imageCdnBase => _imageCdns[_workingImageCdnIndex];
 
   // ── Cache init ──
   Future<void> _initCache() async {
@@ -30,6 +48,8 @@ class TmdbService {
     _prefs = await SharedPreferences.getInstance();
     _workingBaseIndex =
         (_prefs!.getInt('tmdb_proxy_idx') ?? 0).clamp(0, _baseUrls.length - 1);
+    _workingImageCdnIndex =
+        (_prefs!.getInt('tmdb_img_cdn_idx') ?? 0).clamp(0, _imageCdns.length - 1);
 
     final stored = _prefs!.getString('tmdb_cache_v3');
     if (stored != null) {
@@ -62,7 +82,7 @@ class TmdbService {
     _prefs!.setString('tmdb_cache_v3', json.encode(map));
   }
 
-  // ── Core HTTP with proxy fallback ──
+  // ── Core HTTP with aggressive proxy fallback ──
   Future<http.Response?> _get(String path, Map<String, String> params) async {
     await _initCache();
     final queryParams = {'api_key': _apiKey, ...params};
@@ -78,7 +98,8 @@ class TmdbService {
       try {
         final uri = Uri.parse('${_baseUrls[idx]}$path')
             .replace(queryParameters: queryParams);
-        final res = await _client.get(uri).timeout(const Duration(seconds: 13));
+        // Short timeout — fail fast and try next proxy
+        final res = await _client.get(uri).timeout(const Duration(seconds: 8));
 
         if (res.statusCode == 200) {
           if (idx != _workingBaseIndex) {
@@ -88,14 +109,36 @@ class TmdbService {
           return res;
         }
         if (res.statusCode == 429) {
-          await Future.delayed(Duration(milliseconds: 700 * (idx + 1)));
+          await Future.delayed(Duration(milliseconds: 500 * (idx + 1)));
           continue;
         }
       } catch (_) {
-        // Try next proxy
+        // Connection refused / DNS failure / timeout — try next proxy immediately
       }
     }
     return null;
+  }
+
+  /// Probes image CDN availability on first launch and when images fail.
+  /// Call this once during app startup to find a working image CDN.
+  Future<void> probeImageCdn() async {
+    await _initCache();
+    for (int i = 0; i < _imageCdns.length; i++) {
+      try {
+        // Test with a tiny 92px poster of a popular movie (Fight Club)
+        final testUrl = '${_imageCdns[i]}/w92/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg';
+        final res = await _client
+            .head(Uri.parse(testUrl))
+            .timeout(const Duration(seconds: 5));
+        if (res.statusCode == 200) {
+          if (i != _workingImageCdnIndex) {
+            _workingImageCdnIndex = i;
+            _prefs?.setInt('tmdb_img_cdn_idx', i);
+          }
+          return;
+        }
+      } catch (_) {}
+    }
   }
 
   // ── Fetch helpers ──
@@ -118,7 +161,7 @@ class TmdbService {
         _saveCache();
         return _parseMovieList(results);
       }
-      if (attempt == 0) await Future.delayed(const Duration(milliseconds: 600));
+      if (attempt == 0) await Future.delayed(const Duration(milliseconds: 400));
     }
 
     // Return stale cache rather than empty list (works offline)
@@ -145,7 +188,7 @@ class TmdbService {
         _saveCache();
         return data;
       }
-      if (attempt == 0) await Future.delayed(const Duration(milliseconds: 600));
+      if (attempt == 0) await Future.delayed(const Duration(milliseconds: 400));
     }
 
     // Return stale cache
@@ -209,7 +252,7 @@ class TmdbService {
     final data = await _fetchJson('/movie/$id/images');
     final backdrops = data['backdrops'] as List? ?? [];
     return backdrops
-        .map<String>((i) => 'https://image.tmdb.org/t/p/w780${i['file_path']}')
+        .map<String>((i) => '$imageCdnBase/w780${i['file_path']}')
         .take(20)
         .toList();
   }
@@ -218,7 +261,7 @@ class TmdbService {
     final data = await _fetchJson('/tv/$id/images');
     final backdrops = data['backdrops'] as List? ?? [];
     return backdrops
-        .map<String>((i) => 'https://image.tmdb.org/t/p/w780${i['file_path']}')
+        .map<String>((i) => '$imageCdnBase/w780${i['file_path']}')
         .take(20)
         .toList();
   }
@@ -330,7 +373,7 @@ class TmdbService {
     final data = await _fetchJson('/person/$id/images');
     final profiles = data['profiles'] as List? ?? [];
     return profiles
-        .map<String>((i) => 'https://image.tmdb.org/t/p/w500${i['file_path']}')
+        .map<String>((i) => '$imageCdnBase/w500${i['file_path']}')
         .toList();
   }
 

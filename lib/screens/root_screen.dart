@@ -1,6 +1,4 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../services/theme_service.dart';
 import 'home_screen.dart';
 import 'anime_home_screen.dart';
@@ -58,152 +56,79 @@ class _RootScreenState extends State<RootScreen> {
             children: _screens,
           ),
           extendBody: true,
-          bottomNavigationBar: _buildBottomBar(t),
+          bottomNavigationBar: Theme(
+            data: Theme.of(context).copyWith(
+              navigationBarTheme: NavigationBarThemeData(
+                labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: t.accent,
+                    );
+                  }
+                  return TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: t.textMuted,
+                  );
+                }),
+              ),
+            ),
+            child: NavigationBar(
+              selectedIndex: _index,
+              onDestinationSelected: _onDestinationSelected,
+              backgroundColor: t.isDark
+                  ? const Color(0xFF0A0A0F)
+                  : Colors.white,
+              surfaceTintColor: Colors.transparent,
+              indicatorColor: t.accent.withValues(alpha: 0.15),
+              labelBehavior:
+                  NavigationDestinationLabelBehavior.alwaysShow,
+              height: 72,
+              elevation: 3,
+              shadowColor: Colors.black,
+              animationDuration: const Duration(milliseconds: 400),
+              destinations: [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined, color: t.textMuted),
+                  selectedIcon:
+                      Icon(Icons.home_rounded, color: t.accent),
+                  label: 'Home',
+                ),
+                NavigationDestination(
+                  icon:
+                      Icon(Icons.animation_outlined, color: t.textMuted),
+                  selectedIcon:
+                      Icon(Icons.animation_rounded, color: t.accent),
+                  label: 'Anime',
+                ),
+                NavigationDestination(
+                  icon:
+                      Icon(Icons.search_outlined, color: t.textMuted),
+                  selectedIcon:
+                      Icon(Icons.search_rounded, color: t.accent),
+                  label: 'Search',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.bookmark_border_rounded,
+                      color: t.textMuted),
+                  selectedIcon:
+                      Icon(Icons.bookmark_rounded, color: t.accent),
+                  label: 'Watchlist',
+                ),
+                NavigationDestination(
+                  icon:
+                      Icon(Icons.settings_outlined, color: t.textMuted),
+                  selectedIcon:
+                      Icon(Icons.settings_rounded, color: t.accent),
+                  label: 'Settings',
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
   }
-
-  Widget _buildBottomBar(ThemeService t) {
-    final items = [
-      _NavItem(
-          icon: Icons.home_outlined,
-          activeIcon: Icons.home_rounded,
-          label: 'Home'),
-      _NavItem(
-          icon: Icons.animation_outlined,
-          activeIcon: Icons.animation_rounded,
-          label: 'Anime'),
-      _NavItem(
-          icon: Icons.search_rounded,
-          activeIcon: Icons.search_rounded,
-          label: 'Search'),
-      _NavItem(
-          icon: Icons.bookmark_border_rounded,
-          activeIcon: Icons.bookmark_rounded,
-          label: 'Watchlist'),
-      _NavItem(
-          icon: Icons.settings_outlined,
-          activeIcon: Icons.settings_rounded,
-          label: 'Settings'),
-    ];
-
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          decoration: BoxDecoration(
-            color: t.isDark
-                ? Colors.black.withValues(alpha: 0.72)
-                : Colors.white.withValues(alpha: 0.82),
-            border: Border(
-              top: BorderSide(
-                  color: t.isDark
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : Colors.black.withValues(alpha: 0.06),
-                  width: 0.5),
-            ),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Row(
-                children: List.generate(
-                  items.length,
-                  (i) => Expanded(child: _buildNavItem(items[i], i, t)),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(_NavItem item, int i, ThemeService t) {
-    final selected = _index == i;
-    final activeColor = t.accent;
-    final inactiveColor = t.textMuted;
-
-    return GestureDetector(
-      onTap: () => _onDestinationSelected(i),
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Icon with pill indicator
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: selected
-                    ? activeColor.withValues(alpha: 0.12)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: AnimatedScale(
-                scale: selected ? 1.0 : 0.85,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutBack,
-                child: Icon(
-                  selected ? item.activeIcon : item.icon,
-                  color: selected ? activeColor : inactiveColor,
-                  size: 22,
-                ),
-              ),
-            ),
-            const SizedBox(height: 2),
-            // Glow dot indicator
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
-              width: selected ? 5 : 0,
-              height: selected ? 5 : 0,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: activeColor,
-                boxShadow: selected
-                    ? [
-                        BoxShadow(
-                          color: activeColor.withValues(alpha: 0.6),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ]
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 2),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: GoogleFonts.inter(
-                color: selected ? activeColor : inactiveColor,
-                fontSize: selected ? 10.5 : 10,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              ),
-              child: Text(item.label),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-  });
 }

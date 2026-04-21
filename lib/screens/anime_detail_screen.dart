@@ -8,6 +8,7 @@ import '../models/movie.dart';
 import '../services/anilist_service.dart';
 import '../services/theme_service.dart';
 import '../services/watchlist_service.dart';
+import '../services/tmdb_service.dart';
 import '../widgets/ad_banner.dart';
 import 'anime_player_screen.dart';
 import 'image_viewer_screen.dart';
@@ -49,12 +50,12 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
         coverImage: m.posterPath?.startsWith('http') == true
             ? m.posterPath
             : (m.posterPath != null
-                ? 'https://image.tmdb.org/t/p/w500${m.posterPath}'
+                ? '${TmdbService.instance.imageCdnBase}/w500${m.posterPath}'
                 : null),
         bannerImage: m.backdropPath?.startsWith('http') == true
             ? m.backdropPath
             : (m.backdropPath != null
-                ? 'https://image.tmdb.org/t/p/original${m.backdropPath}'
+                ? '${TmdbService.instance.imageCdnBase}/original${m.backdropPath}'
                 : null),
         averageScore: m.voteAverage > 0 ? m.voteAverage : null,
         year: int.tryParse(m.year != 'N/A' ? m.year : '0'),

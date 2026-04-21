@@ -388,89 +388,65 @@ class _HomeScreenState extends State<HomeScreen>
     return Scaffold(
       backgroundColor: t.bg,
       extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: EdgeInsets.only(
-            top: MediaQuery.of(context).padding.top + 8,
-            left: 16,
-            right: 16,
-            bottom: 12,
-          ),
-          decoration: BoxDecoration(
-            color: _isScrolled
-                ? t.isDark
-                    ? Colors.black.withValues(alpha: 0.95)
-                    : Colors.white.withValues(alpha: 0.95)
-                : Colors.transparent,
-            gradient: _isScrolled
-                ? null
-                : LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.8),
-                      Colors.black.withValues(alpha: 0.5),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.6, 1.0],
-                  ),
-            boxShadow: _isScrolled
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ]
-                : null,
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.asset(
-                  'assets/logo.png',
+      appBar: AppBar(
+        scrolledUnderElevation: 4,
+        backgroundColor: _isScrolled
+            ? (t.isDark ? const Color(0xFF0A0A0F) : Colors.white)
+            : Colors.transparent,
+        surfaceTintColor: t.isDark ? const Color(0xFF0A0A0F) : Colors.white,
+        elevation: 0,
+        titleSpacing: 16,
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                'assets/logo.png',
+                width: 36,
+                height: 36,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
                   width: 36,
                   height: 36,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                      ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                     ),
-                    child: const Icon(Icons.play_arrow_rounded,
-                        color: Colors.white, size: 24),
                   ),
+                  child: const Icon(Icons.play_arrow_rounded,
+                      color: Colors.white, size: 24),
                 ),
               ),
-              const SizedBox(width: 10),
-              Text(
-                'Harmber Movies',
-                style: GoogleFonts.inter(
-                  color:
-                      _isScrolled && !t.isDark ? Colors.black87 : Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
-                ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Harmber Movies',
+              style: GoogleFonts.inter(
+                color: _isScrolled && !t.isDark ? Colors.black87 : Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
               ),
-              const Spacer(),
-              _glassButton(
-                icon: t.isDark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
-                onTap: () => ThemeService.instance.toggle(),
-                isScrolledAndLight: _isScrolled && !t.isDark,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
+        actions: [
+          IconButton(
+            onPressed: () => ThemeService.instance.toggle(),
+            icon: Icon(
+              t.isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              color:
+                  _isScrolled && !t.isDark ? Colors.black87 : Colors.white,
+            ),
+            style: IconButton.styleFrom(
+              backgroundColor:
+                  (_isScrolled && !t.isDark ? Colors.black87 : Colors.white)
+                      .withValues(alpha: 0.1),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: content,
     );
@@ -583,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
 
-          // Content with staggered animations
+          // Content
           Positioned(
             left: 20,
             right: 20,
@@ -592,70 +568,42 @@ class _HomeScreenState extends State<HomeScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Rating + year + type badges
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
-                    _glassBadge(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star_rounded,
-                              color: Color(0xFFFFD700), size: 14),
-                          const SizedBox(width: 4),
-                          Text(movie.rating,
-                              style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700)),
-                        ],
-                      ),
+                    _heroBadge(
+                      icon: Icons.star_rounded,
+                      iconColor: const Color(0xFFFFD700),
+                      text: movie.rating,
                     ),
-                    const SizedBox(width: 8),
                     if (movie.year != 'N/A')
-                      _glassBadge(
-                        child: Text(movie.year,
-                            style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600)),
+                      _heroBadge(
+                        icon: Icons.calendar_today_rounded,
+                        text: movie.year,
                       ),
-                    if (movie.isTV) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color.fromARGB(255, 4, 138, 210),
-                              Color.fromARGB(255, 25, 89, 199)
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text('TV SERIES',
-                            style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5)),
+                    if (movie.isTV)
+                      _heroBadge(
+                        icon: Icons.live_tv_rounded,
+                        text: 'TV SERIES',
+                        gradient: const [Color(0xFF0EA5E9), Color(0xFF1D4ED8)],
                       ),
-                    ],
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
                 // Logo or title
                 (movie.logoUrl.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: movie.logoUrl,
-                            height: 70,
-                            width: MediaQuery.of(context).size.width * 0.65,
-                            alignment: Alignment.centerLeft,
-                            fit: BoxFit.contain,
-                            errorWidget: (_, __, ___) => _heroTitle(movie),
-                          )
-                        : _heroTitle(movie)),
+                    ? CachedNetworkImage(
+                        imageUrl: movie.logoUrl,
+                        height: 70,
+                        width: MediaQuery.of(context).size.width * 0.65,
+                        alignment: Alignment.centerLeft,
+                        fit: BoxFit.contain,
+                        errorWidget: (_, __, ___) => _heroTitle(movie),
+                      )
+                    : _heroTitle(movie)),
 
                 const SizedBox(height: 10),
 
@@ -675,23 +623,40 @@ class _HomeScreenState extends State<HomeScreen>
 
                 const SizedBox(height: 18),
 
-                // Action buttons
+                // Material 3 action buttons
                 Row(
                   children: [
-                    // Watch button with gradient
-                    _heroButton(
-                      icon: Icons.play_arrow_rounded,
-                      label: 'Watch Now',
-                      filled: true,
-                      onTap: () => _navigateToDetail(movie),
+                    FilledButton.icon(
+                      onPressed: () => _navigateToDetail(movie),
+                      icon: const Icon(Icons.play_arrow_rounded, size: 22),
+                      label: Text('Watch Now',
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w700, fontSize: 14)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    // Details button
-                    _heroButton(
-                      icon: Icons.info_outline_rounded,
-                      label: 'Details',
-                      filled: false,
-                      onTap: () => _navigateToDetail(movie),
+                    OutlinedButton.icon(
+                      onPressed: () => _navigateToDetail(movie),
+                      icon: const Icon(Icons.info_outline_rounded, size: 20),
+                      label: Text('Details',
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w700, fontSize: 14)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.35)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
                   ],
                 ),
@@ -718,80 +683,33 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _heroButton({
+  Widget _heroBadge({
     required IconData icon,
-    required String label,
-    required bool filled,
-    required VoidCallback onTap,
+    required String text,
+    Color? iconColor,
+    List<Color>? gradient,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: filled
-              ? const LinearGradient(
-                  colors: [Color(0xFFE50914), Color(0xFFFF2D2D)],
-                )
-              : null,
-          color: filled ? null : Colors.white.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
-          border: filled
-              ? null
-              : Border.all(color: Colors.white.withValues(alpha: 0.25)),
-          boxShadow: filled
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFFE50914).withValues(alpha: 0.45),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Text(label,
-                style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _glassBadge({required Widget child}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
+        gradient: gradient != null ? LinearGradient(colors: gradient) : null,
+        color: gradient == null ? Colors.white.withValues(alpha: 0.12) : null,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: gradient == null
+            ? Border.all(color: Colors.white.withValues(alpha: 0.1))
+            : null,
       ),
-      child: child,
-    );
-  }
-
-  Widget _glassButton(
-      {required IconData icon,
-      required VoidCallback onTap,
-      bool isScrolledAndLight = false}) {
-    final color = isScrolledAndLight ? Colors.black87 : Colors.white;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          shape: BoxShape.circle,
-          border: Border.all(color: color.withValues(alpha: 0.1)),
-        ),
-        child: Icon(icon, color: color, size: 20),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: iconColor ?? Colors.white70),
+          const SizedBox(width: 4),
+          Text(text,
+              style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700)),
+        ],
       ),
     );
   }
