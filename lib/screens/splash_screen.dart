@@ -195,45 +195,51 @@ class _SplashScreenState extends State<SplashScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Harmber Movies is 100% free — no subscriptions, ever.',
+                  'Harmber Movies is 100% free — no subscriptions, ever. You support us just by visiting a sponsor page!',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(fontSize: 13, height: 1.5),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: CupertinoColors.systemGrey6,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(CupertinoIcons.timer,
-                          size: 18, color: CupertinoColors.systemGrey),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Wait 10–20 seconds on the page, then come back!',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: CupertinoColors.systemGrey,
-                            height: 1.4,
-                          ),
+                      Text(
+                        'How it works:',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: CupertinoColors.systemGrey,
                         ),
                       ),
+                      const SizedBox(height: 6),
+                      _buildStep('1', 'Tap "Support Now" below', CupertinoColors.systemGrey),
+                      _buildStep('2', 'Stay on the page for 10–20 seconds', CupertinoColors.systemGrey),
+                      _buildStep('3', 'Come back to the app — done!', CupertinoColors.systemGrey),
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Tapping "Support Now" opens our sponsor page. This keeps the servers running ❤️',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: CupertinoColors.systemGrey,
-                    height: 1.4,
-                  ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(CupertinoIcons.clock,
+                        size: 13, color: CupertinoColors.systemGrey),
+                    const SizedBox(width: 4),
+                    Text(
+                      'This won\'t appear again for 6 hours',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: CupertinoColors.systemGrey,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -258,6 +264,40 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStep(String num, String text, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(num,
+                  style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: color)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text,
+                style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: color,
+                    fontWeight: FontWeight.w500,
+                    height: 1.3)),
+          ),
+        ],
       ),
     );
   }
@@ -346,7 +386,7 @@ class _SplashScreenState extends State<SplashScreen>
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(28),
                           child: Image.asset(
-                            'assets/logo.png',
+                            'assets/logo_main.png',
                             width: 112,
                             height: 112,
                             fit: BoxFit.cover,

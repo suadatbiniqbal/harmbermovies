@@ -223,7 +223,7 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: Image.asset(
-                    'assets/logo.png',
+                    'assets/logo_main.png',
                     width: 36,
                     height: 36,
                     fit: BoxFit.cover,
