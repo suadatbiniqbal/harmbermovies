@@ -104,8 +104,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF6366F1)
-                                  .withValues(alpha: 0.2),
+                              color: Colors.white
+                                  .withValues(alpha: 0.08),
                               blurRadius: 12,
                               spreadRadius: 1,
                             ),
@@ -125,8 +125,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 borderRadius: BorderRadius.circular(16),
                                 gradient: const LinearGradient(
                                   colors: [
-                                    Color(0xFF6366F1),
-                                    Color(0xFF8B5CF6),
+                                    Color(0xFF1A1A1A),
+                                    Color(0xFF2A2A2A),
                                   ],
                                 ),
                               ),

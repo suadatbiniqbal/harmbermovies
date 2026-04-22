@@ -184,11 +184,11 @@ class HistoryCard extends StatelessWidget {
   Color _typeColor(String type) {
     switch (type) {
       case 'anime':
-        return const Color(0xFF8B5CF6);
+        return Colors.white70;
       case 'tv':
-        return const Color(0xFF0EA5E9);
+        return Colors.white60;
       default:
-        return const Color(0xFF6366F1);
+        return Colors.white54;
     }
   }
 

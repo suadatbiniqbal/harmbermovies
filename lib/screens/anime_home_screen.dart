@@ -232,9 +232,7 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
                       height: 36,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                        ),
+                        color: const Color(0xFF1A1A1A),
                       ),
                       child: const Icon(Icons.play_arrow_rounded,
                           color: Colors.white, size: 24),
@@ -308,51 +306,42 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
 
   Widget _buildHeroCarousel(ThemeService t) {
     final heroes = _trending.take(6).toList();
-    if (heroes.isEmpty) return const SizedBox(height: 500);
+    if (heroes.isEmpty) return const SizedBox(height: 560);
 
     return Stack(
       children: [
         CarouselSlider.builder(
           itemCount: heroes.length,
           options: CarouselOptions(
-            height: 520,
+            height: 560,
             viewportFraction: 1.0,
             autoPlay: true,
             autoPlayInterval: const Duration(seconds: 5),
-            autoPlayAnimationDuration: const Duration(milliseconds: 1000),
+            autoPlayAnimationDuration: const Duration(milliseconds: 900),
             autoPlayCurve: Curves.easeInOutCubic,
             onPageChanged: (i, _) => setState(() => _heroIndex = i),
           ),
           itemBuilder: (_, i, __) => _buildHeroItem(heroes[i], t, i),
         ),
+        // Page indicators — bottom right
         Positioned(
-          bottom: 20,
-          left: 0,
-          right: 0,
+          bottom: 24,
+          right: 20,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: List.generate(
               heroes.length,
               (i) => AnimatedContainer(
-                duration: const Duration(milliseconds: 400),
+                duration: const Duration(milliseconds: 350),
                 curve: Curves.easeOutCubic,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: _heroIndex == i ? 28 : 8,
-                height: 4,
+                margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                width: _heroIndex == i ? 22 : 6,
+                height: 3,
                 decoration: BoxDecoration(
                   color: _heroIndex == i
                       ? Colors.white
-                      : Colors.white.withValues(alpha: 0.3),
+                      : Colors.white.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(2),
-                  boxShadow: _heroIndex == i
-                      ? [
-                          BoxShadow(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            blurRadius: 6,
-                            spreadRadius: 0,
-                          ),
-                        ]
-                      : null,
                 ),
               ),
             ),
@@ -373,44 +362,56 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
               imageUrl: anime.bannerImage ?? anime.coverImage ?? '',
               fit: BoxFit.cover,
               alignment: Alignment.center,
-              placeholder: (_, __) => Container(color: const Color(0xFF0A0A0F)),
+              placeholder: (_, __) => Container(color: const Color(0xFF080808)),
               errorWidget: (_, __, ___) =>
-                  Container(color: const Color(0xFF0A0A0F)),
+                  Container(color: const Color(0xFF080808)),
             ),
+
+          // Cinematic letterbox bar — top
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 5,
+            child: Container(color: Colors.black),
+          ),
+
+          // Dark overlay scrim
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.transparent,
-                  Colors.transparent,
-                  t.bg.withValues(alpha: 0.4),
-                  t.bg.withValues(alpha: 0.85),
-                  t.bg,
+                  Color(0x44000000),
+                  Color(0x00000000),
+                  Color(0x66000000),
+                  Color(0xCC000000),
+                  Color(0xFF000000),
                 ],
-                stops: const [0.0, 0.25, 0.55, 0.75, 1.0],
+                stops: [0.0, 0.2, 0.5, 0.75, 1.0],
               ),
             ),
           ),
+          // Left edge vignette
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
                 colors: [
-                  t.bg.withValues(alpha: 0.4),
-                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.5),
                   Colors.transparent,
                 ],
-                stops: const [0.0, 0.3, 1.0],
+                stops: const [0.0, 0.4],
               ),
             ),
           ),
+
           Positioned(
             left: 20,
             right: 20,
-            bottom: 45,
+            bottom: 42,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -433,13 +434,13 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
                       _heroBadge(
                         icon: Icons.movie_filter_rounded,
                         text: anime.format!,
-                        gradient: const [Color(0xFF8B5CF6), Color(0xFF6366F1)],
+                        solid: true,
                       ),
                   ],
                 ),
                 const SizedBox(height: 14),
                 _heroTitle(anime),
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     FilledButton.icon(
@@ -452,24 +453,26 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
+                            horizontal: 22, vertical: 13),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     OutlinedButton.icon(
                       onPressed: () => _navigateToDetail(anime),
                       icon: const Icon(Icons.info_outline_rounded, size: 20),
-                      label: Text('Details',
+                      label: Text('Info',
                           style: GoogleFonts.inter(
-                              fontWeight: FontWeight.w700, fontSize: 14)),
+                              fontWeight: FontWeight.w600, fontSize: 14)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.35)),
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 1.5),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
+                            horizontal: 20, vertical: 13),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
@@ -503,17 +506,20 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
     required IconData icon,
     required String text,
     Color? iconColor,
-    List<Color>? gradient,
+    bool solid = false,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        gradient: gradient != null ? LinearGradient(colors: gradient) : null,
-        color: gradient == null ? Colors.white.withValues(alpha: 0.12) : null,
+        color: solid
+            ? Colors.white.withValues(alpha: 0.2)
+            : Colors.black.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(8),
-        border: gradient == null
-            ? Border.all(color: Colors.white.withValues(alpha: 0.1))
-            : null,
+        border: Border.all(
+          color: solid
+              ? Colors.white.withValues(alpha: 0.35)
+              : Colors.white.withValues(alpha: 0.12),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

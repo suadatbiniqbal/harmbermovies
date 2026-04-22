@@ -12,6 +12,12 @@ class FcmService {
   Future<void> init() async {
     if (_initialized) return;
 
+    // FCM push notifications only work on Android/iOS, skip on web
+    if (kIsWeb) {
+      debugPrint('FCM: Skipping on web platform');
+      return;
+    }
+
     try {
       final messaging = FirebaseMessaging.instance;
 
@@ -31,17 +37,21 @@ class FcmService {
         return;
       }
 
-      // Subscribe to all_users topic (not supported on web)
+      // Subscribe to all_users topic
       try {
         await messaging.subscribeToTopic('all');
         debugPrint('FCM: Subscribed to all_users topic');
-      } catch (_) {
-        debugPrint('FCM: Topic subscription not supported on this platform');
+      } catch (e) {
+        debugPrint('FCM: Topic subscription failed: $e');
       }
 
       // Get FCM token
-      final token = await messaging.getToken();
-      debugPrint('FCM Token: $token');
+      try {
+        final token = await messaging.getToken();
+        debugPrint('FCM Token: $token');
+      } catch (e) {
+        debugPrint('FCM: Failed to get token: $e');
+      }
 
       // Handle foreground messages
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -50,9 +60,13 @@ class FcmService {
       FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
 
       // Check if app was opened from a notification (when terminated)
-      final initialMessage = await messaging.getInitialMessage();
-      if (initialMessage != null) {
-        _handleMessageOpenedApp(initialMessage);
+      try {
+        final initialMessage = await messaging.getInitialMessage();
+        if (initialMessage != null) {
+          _handleMessageOpenedApp(initialMessage);
+        }
+      } catch (e) {
+        debugPrint('FCM: Failed to get initial message: $e');
       }
 
       _initialized = true;
@@ -64,14 +78,10 @@ class FcmService {
 
   void _handleForegroundMessage(RemoteMessage message) {
     debugPrint('FCM foreground: ${message.notification?.title}');
-    // Messages are automatically shown as notifications by the system
-    // when the app is in the background. For foreground, they're handled here.
   }
 
   void _handleMessageOpenedApp(RemoteMessage message) {
     debugPrint('FCM opened: ${message.notification?.title}');
-    // Handle navigation based on notification data
-    // e.g., navigate to a specific movie/show detail
   }
 }
 
@@ -79,7 +89,6 @@ class FcmService {
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
-    // Required to be initialized in the background isolate
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
     debugPrint('FCM background: ${message.notification?.title}');

@@ -328,17 +328,11 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                    ),
+                    color: Colors.black.withValues(alpha: 0.75),
                     borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Text(
                     a.format!,
@@ -596,18 +590,18 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
       'Action': Color(0xFFEF4444),
       'Adventure': Color(0xFFF59E0B),
       'Comedy': Color(0xFFFBBF24),
-      'Drama': Color(0xFF8B5CF6),
-      'Fantasy': Color(0xFF6366F1),
+      'Drama': Color(0xFF9CA3AF),
+      'Fantasy': Color(0xFF6B7280),
       'Horror': Color(0xFF1F2937),
       'Mecha': Color(0xFF3B82F6),
       'Music': Color(0xFFEC4899),
       'Mystery': Color(0xFF6B7280),
-      'Psychological': Color(0xFF7C3AED),
+      'Psychological': Color(0xFF9CA3AF),
       'Romance': Color(0xFFF43F5E),
       'Sci-Fi': Color(0xFF06B6D4),
       'Slice of Life': Color(0xFF10B981),
       'Sports': Color(0xFF22C55E),
-      'Supernatural': Color(0xFF8B5CF6),
+      'Supernatural': Color(0xFF9CA3AF),
       'Thriller': Color(0xFFDC2626),
     };
 
@@ -686,9 +680,9 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
         _sectionHeader('Seasons & Related', t),
         const SizedBox(height: 12),
         if (prequels.isNotEmpty)
-          _buildRelationRow('Prequel', prequels, const Color(0xFF8B5CF6), t),
+          _buildRelationRow('Prequel', prequels, t.textMuted, t),
         if (sequels.isNotEmpty)
-          _buildRelationRow('Sequel', sequels, const Color(0xFF6366F1), t),
+          _buildRelationRow('Sequel', sequels, t.textMuted, t),
         if (others.isNotEmpty)
           _buildRelationRow('Related', others, t.accent, t),
         const SizedBox(height: 8),

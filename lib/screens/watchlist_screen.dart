@@ -469,15 +469,11 @@ class _WatchlistCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: movie.mediaType == 'anime'
-                                ? const [Color(0xFF8B5CF6), Color(0xFF6366F1)]
-                                : const [
-                                    Color(0xFF0EA5E9),
-                                    Color(0xFF1D4ED8),
-                                  ],
-                          ),
+                          color: Colors.black.withValues(alpha: 0.75),
                           borderRadius: BorderRadius.circular(5),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
                         ),
                         child: Text(
                             movie.mediaType == 'anime' ? 'ANIME' : 'TV',

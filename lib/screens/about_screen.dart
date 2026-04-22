@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/theme_service.dart';
+import '../services/update_service.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -58,7 +59,7 @@ class AboutScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Version 1.0.0',
+                  'Version ${UpdateService.currentVersion}',
                   style: GoogleFonts.inter(color: t.textMuted, fontSize: 14),
                 ),
                 const SizedBox(height: 12),

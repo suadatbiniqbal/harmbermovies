@@ -39,24 +39,24 @@ class _SearchScreenState extends State<SearchScreen>
 
   static const _genreColors = [
     [Color(0xFFE50914), Color(0xFF831010)],
-    [Color(0xFF667EEA), Color(0xFF764BA2)],
-    [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+    [Color(0xFF374151), Color(0xFF1F2937)],
+    [Color(0xFF065F46), Color(0xFF064E3B)],
     [Color(0xFFFF6B35), Color(0xFFD84315)],
-    [Color(0xFF9C27B0), Color(0xFF6A1B9A)],
-    [Color(0xFF00BCD4), Color(0xFF00838F)],
+    [Color(0xFF1F2937), Color(0xFF111827)],
+    [Color(0xFF0F4C75), Color(0xFF063361)],
     [Color(0xFFFF5252), Color(0xFFC62828)],
-    [Color(0xFF3F51B5), Color(0xFF1A237E)],
+    [Color(0xFF1A1A2E), Color(0xFF16213E)],
     [Color(0xFFFF9800), Color(0xFFE65100)],
-    [Color(0xFF009688), Color(0xFF004D40)],
-    [Color(0xFF795548), Color(0xFF3E2723)],
+    [Color(0xFF004D40), Color(0xFF00251A)],
+    [Color(0xFF3E2723), Color(0xFF1B0000)],
     [Color(0xFFE91E63), Color(0xFF880E4F)],
-    [Color(0xFF607D8B), Color(0xFF37474F)],
-    [Color(0xFF8BC34A), Color(0xFF558B2F)],
-    [Color(0xFFCDDC39), Color(0xFF9E9D24)],
-    [Color(0xFF2196F3), Color(0xFF0D47A1)],
-    [Color(0xFFFF7043), Color(0xFFBF360C)],
-    [Color(0xFFAB47BC), Color(0xFF6A1B9A)],
-    [Color(0xFF26C6DA), Color(0xFF00695C)],
+    [Color(0xFF263238), Color(0xFF1C2831)],
+    [Color(0xFF2E7D32), Color(0xFF1B5E20)],
+    [Color(0xFF827717), Color(0xFF524809)],
+    [Color(0xFF0D47A1), Color(0xFF082D71)],
+    [Color(0xFFBF360C), Color(0xFF7F2407)],
+    [Color(0xFF4A148C), Color(0xFF2D0056)],
+    [Color(0xFF006064), Color(0xFF003B3F)],
   ];
 
   static const _genreIcons = <int, IconData>{
@@ -369,17 +369,13 @@ class _SearchScreenState extends State<SearchScreen>
       subtitle = m.year != 'N/A' ? m.year : '';
     }
 
-    Color badgeColor = t.accent;
     String badgeText = '';
     if (isAnime) {
       badgeText = m.format ?? 'ANIME';
-      badgeColor = const Color(0xFF6366F1);
     } else if (isPerson) {
       badgeText = 'ACTOR';
-      badgeColor = const Color(0xFF10B981);
     } else if (isTV) {
       badgeText = 'TV';
-      badgeColor = const Color(0xFF8B5CF6);
     }
 
     return GestureDetector(
@@ -501,8 +497,7 @@ class _SearchScreenState extends State<SearchScreen>
                         ),
                       ),
 
-                    // Type badge
-                    if (badgeText.isNotEmpty)
+                     if (badgeText.isNotEmpty)
                       Positioned(
                         top: 6,
                         left: 6,
@@ -510,15 +505,11 @@ class _SearchScreenState extends State<SearchScreen>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 7, vertical: 3),
                           decoration: BoxDecoration(
-                            color: badgeColor,
-                            borderRadius: BorderRadius.circular(6),
-                            boxShadow: [
-                              BoxShadow(
-                                color: badgeColor.withValues(alpha: 0.4),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
+                            color: Colors.black.withValues(alpha: 0.72),
+                            borderRadius: BorderRadius.circular(7),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.2),
+                            ),
                           ),
                           child: Text(badgeText,
                               style: GoogleFonts.inter(

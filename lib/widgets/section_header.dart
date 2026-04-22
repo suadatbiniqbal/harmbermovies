@@ -18,44 +18,20 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = ThemeService.instance;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 28, 12, 14),
+      padding: const EdgeInsets.fromLTRB(16, 28, 16, 14),
       child: Row(
         children: [
-          // Accent glow line
-          Container(
-            width: 3,
-            height: 22,
-            margin: const EdgeInsets.only(right: 10),
-            decoration: BoxDecoration(
-              color: t.accent,
-              borderRadius: BorderRadius.circular(2),
-              boxShadow: [
-                BoxShadow(
-                  color: t.accent.withValues(alpha: 0.4),
-                  blurRadius: 6,
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-          ),
           if (icon != null) ...[
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: t.accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: t.accent, size: 18),
-            ),
-            const SizedBox(width: 10),
+            Icon(icon, color: t.text, size: 18),
+            const SizedBox(width: 8),
           ],
           Expanded(
             child: Text(
               title,
               style: GoogleFonts.inter(
                 color: t.text,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
                 letterSpacing: -0.3,
               ),
             ),
@@ -63,28 +39,12 @@ class SectionHeader extends StatelessWidget {
           if (onSeeAll != null)
             GestureDetector(
               onTap: onSeeAll,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: t.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'See All',
-                      style: GoogleFonts.inter(
-                        color: t.accent,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_ios_rounded,
-                        color: t.accent, size: 11),
-                  ],
+              child: Text(
+                'See all →',
+                style: GoogleFonts.inter(
+                  color: t.textMuted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),

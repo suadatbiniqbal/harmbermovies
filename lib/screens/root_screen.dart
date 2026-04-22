@@ -38,8 +38,13 @@ class _RootScreenState extends State<RootScreen> {
   }
 
   void _onDestinationSelected(int i) {
+    if (i == _index) return;
     setState(() => _index = i);
-    _pageController.jumpToPage(i);
+    _pageController.animateToPage(
+      i,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -64,7 +69,7 @@ class _RootScreenState extends State<RootScreen> {
                     return TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: t.accent,
+                      color: t.isDark ? Colors.white : Colors.black,
                     );
                   }
                   return TextStyle(
@@ -78,11 +83,12 @@ class _RootScreenState extends State<RootScreen> {
             child: NavigationBar(
               selectedIndex: _index,
               onDestinationSelected: _onDestinationSelected,
-              backgroundColor: t.isDark
-                  ? const Color(0xFF0A0A0F)
-                  : Colors.white,
+              backgroundColor:
+                  t.isDark ? const Color(0xFF0A0A0F) : Colors.white,
               surfaceTintColor: Colors.transparent,
-              indicatorColor: t.accent.withValues(alpha: 0.15),
+              indicatorColor:
+                  (t.isDark ? Colors.white : Colors.black)
+                      .withValues(alpha: 0.10),
               labelBehavior:
                   NavigationDestinationLabelBehavior.alwaysShow,
               height: 72,
@@ -92,36 +98,36 @@ class _RootScreenState extends State<RootScreen> {
               destinations: [
                 NavigationDestination(
                   icon: Icon(Icons.home_outlined, color: t.textMuted),
-                  selectedIcon:
-                      Icon(Icons.home_rounded, color: t.accent),
+                  selectedIcon: Icon(Icons.home_rounded,
+                      color: t.isDark ? Colors.white : Colors.black),
                   label: 'Home',
                 ),
                 NavigationDestination(
-                  icon:
-                      Icon(Icons.animation_outlined, color: t.textMuted),
-                  selectedIcon:
-                      Icon(Icons.animation_rounded, color: t.accent),
+                  icon: Icon(Icons.animation_outlined,
+                      color: t.textMuted),
+                  selectedIcon: Icon(Icons.animation_rounded,
+                      color: t.isDark ? Colors.white : Colors.black),
                   label: 'Anime',
                 ),
                 NavigationDestination(
-                  icon:
-                      Icon(Icons.search_outlined, color: t.textMuted),
-                  selectedIcon:
-                      Icon(Icons.search_rounded, color: t.accent),
+                  icon: Icon(Icons.search_outlined,
+                      color: t.textMuted),
+                  selectedIcon: Icon(Icons.search_rounded,
+                      color: t.isDark ? Colors.white : Colors.black),
                   label: 'Search',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.bookmark_border_rounded,
                       color: t.textMuted),
-                  selectedIcon:
-                      Icon(Icons.bookmark_rounded, color: t.accent),
+                  selectedIcon: Icon(Icons.bookmark_rounded,
+                      color: t.isDark ? Colors.white : Colors.black),
                   label: 'Watchlist',
                 ),
                 NavigationDestination(
-                  icon:
-                      Icon(Icons.settings_outlined, color: t.textMuted),
-                  selectedIcon:
-                      Icon(Icons.settings_rounded, color: t.accent),
+                  icon: Icon(Icons.settings_outlined,
+                      color: t.textMuted),
+                  selectedIcon: Icon(Icons.settings_rounded,
+                      color: t.isDark ? Colors.white : Colors.black),
                   label: 'Settings',
                 ),
               ],
