@@ -41,10 +41,11 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
   bool _webViewInitialized = false;
 
   String get _url {
+    final ep = _currentEpisode < 1 ? 1 : _currentEpisode;
     if (widget.isMovie) {
       return 'https://player.videasy.net/anime/${widget.anilistId}';
     }
-    return 'https://player.videasy.net/anime/${widget.anilistId}/$_currentEpisode';
+    return 'https://player.videasy.net/anime/${widget.anilistId}/$ep';
   }
 
   static const _playerScript = '''
@@ -160,8 +161,9 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
         },
         onNavigationRequest: (request) {
           if (!request.url.contains('videasy.net') &&
+              !request.url.contains('vidfast.pro') &&
+              !request.url.contains('vidsrc.net') &&
               !request.url.contains('vidsrc') &&
-              !request.url.contains('vidfast') &&
               !request.url.startsWith('about:') &&
               !request.url.startsWith('data:') &&
               !request.url.startsWith('blob:')) {
@@ -239,8 +241,7 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
               elevation: 0,
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.fullscreen_rounded,
-                      color: Colors.white70),
+                  icon: const Icon(Icons.fullscreen_rounded, color: Colors.white70),
                   tooltip: 'Full Screen',
                   onPressed: () {
                     SystemChrome.setPreferredOrientations([

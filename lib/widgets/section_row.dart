@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/movie.dart';
+import 'package:shimmer/shimmer.dart';
 import 'movie_card.dart';
 import 'section_header.dart';
 
@@ -30,17 +31,21 @@ class SectionRow extends StatelessWidget {
           SizedBox(
             height: 270,
             child: isLoading
-                ? ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: 5,
-                    addAutomaticKeepAlives: false,
-                    itemBuilder: (_, __) => Container(
-                      width: 140,
-                      margin: const EdgeInsets.only(right: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(18),
+                ? Shimmer.fromColors(
+                    baseColor: Colors.white.withValues(alpha: 0.05),
+                    highlightColor: Colors.white.withValues(alpha: 0.15),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: 5,
+                      addAutomaticKeepAlives: false,
+                      itemBuilder: (_, __) => Container(
+                        width: 140,
+                        margin: const EdgeInsets.only(right: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
                       ),
                     ),
                   )

@@ -190,7 +190,10 @@ class _HomeScreenState extends State<HomeScreen>
 
       if (!_hasError) {
         _fetchHeroLogos((_trending).take(6).toList());
+        // Precache hero backdrop images for instant carousel rendering
+        _precacheHeroImages();
         _loadChunk2();
+        _loadChunk3();
       }
     } catch (e) {
       if (mounted) {
@@ -212,6 +215,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           );
           _loadChunk2();
+          _loadChunk3();
         }
       }
     }
@@ -278,6 +282,25 @@ class _HomeScreenState extends State<HomeScreen>
         }).toList();
       });
     } catch (_) {}
+  }
+
+  void _precacheHeroImages() {
+    // Eagerly cache the first few hero backdrops for instant rendering
+    final heroItems = _trending.take(4);
+    for (final m in heroItems) {
+      if (m.backdropUrl.isNotEmpty) {
+        precacheImage(
+          CachedNetworkImageProvider(m.backdropUrl),
+          context,
+        );
+      }
+      if (m.posterUrl.isNotEmpty) {
+        precacheImage(
+          CachedNetworkImageProvider(m.posterUrl),
+          context,
+        );
+      }
+    }
   }
 
   void _navigateToDetail(Movie movie) {

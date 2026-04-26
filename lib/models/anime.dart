@@ -78,7 +78,10 @@ class Anime {
               .toList() ??
           [],
       streamingEpisodes: (json['streamingEpisodes'] as List?)
-              ?.map((e) => AnimeEpisode.fromJson(e))
+              ?.asMap()
+              .entries
+              .map((entry) => AnimeEpisode.fromJson(entry.value,
+                  fallbackIndex: entry.key + 1))
               .toList() ??
           [],
       studios: (json['studios']?['nodes'] as List?)
@@ -120,20 +123,42 @@ class AnimeEpisode {
     required this.number,
   });
 
-  factory AnimeEpisode.fromJson(Map<String, dynamic>? json) {
-    if (json == null) return AnimeEpisode(id: 0, title: 'Unknown', number: 0);
-
-    String? epTitle = json['title'];
-    if (epTitle == null && json['number'] != null) {
-      epTitle = 'Episode ${json['number']}';
+  /// Extracts episode number from title strings like:
+  ///   "Episode 5 - Title"
+  ///   "Episode 12"
+  ///   "Ep. 3 - Blah"
+  static int _parseEpisodeNumber(String? title, int fallbackIndex) {
+    if (title == null || title.isEmpty) return fallbackIndex;
+    // Match patterns: "Episode 5", "Ep. 5", "EP5", "E05", etc.
+    final match = RegExp(r'(?:Episode|Ep\.?|E)\s*(\d+)', caseSensitive: false)
+        .firstMatch(title);
+    if (match != null) {
+      return int.tryParse(match.group(1)!) ?? fallbackIndex;
     }
+    return fallbackIndex;
+  }
+
+  /// [fallbackIndex] is the 1-based position in the list when the title
+  /// doesn't contain a parseable episode number.
+  factory AnimeEpisode.fromJson(Map<String, dynamic>? json,
+      {int fallbackIndex = 1}) {
+    if (json == null) {
+      return AnimeEpisode(
+          id: 0, title: 'Unknown', number: fallbackIndex);
+    }
+
+    final rawTitle = json['title'] as String?;
+    final number = json['number'] as int? ??
+        _parseEpisodeNumber(rawTitle, fallbackIndex);
+
+    String epTitle = rawTitle ?? 'Episode $number';
 
     return AnimeEpisode(
       id: json['id'] ?? 0,
-      title: epTitle ?? 'Unknown Episode',
+      title: epTitle,
       thumbnail: json['thumbnail'],
       url: json['url'],
-      number: json['number'] ?? 0,
+      number: number,
     );
   }
 }

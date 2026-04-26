@@ -441,8 +441,8 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
             final nowIn = WatchlistService.instance.isInWatchlist(s.id);
             Fluttertoast.showToast(
               msg: nowIn ? '✓ Added to Watchlist' : 'Removed from Watchlist',
-              backgroundColor: Colors.white,
-              textColor: const Color(0xFF121212),
+              backgroundColor: t.accent,
+              textColor: Colors.white,
               gravity: ToastGravity.BOTTOM,
             );
           },

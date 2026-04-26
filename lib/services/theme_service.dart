@@ -22,24 +22,42 @@ class ThemeService extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Original Action Red ──
   static const Color _accent = Color(0xFFE50914);
 
   Color get accent => _accent;
-  Color get bg => _isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF4F4F8);
+
+  // ── Dark mode: deep charcoal layers with subtle blue undertone ──
+  // ── Light mode: warm off-white with soft gray surfaces ──
+  Color get bg =>
+      _isDark ? const Color(0xFF08080C) : const Color(0xFFF7F6F3);
   Color get surface =>
-      _isDark ? const Color(0xFF13131A) : const Color(0xFFFFFFFF);
+      _isDark ? const Color(0xFF101016) : const Color(0xFFFFFFFF);
   Color get surface2 =>
-      _isDark ? const Color(0xFF1A1A26) : const Color(0xFFEEEEF4);
+      _isDark ? const Color(0xFF18181F) : const Color(0xFFEFEEEB);
+  Color get surface3 =>
+      _isDark ? const Color(0xFF1F1F28) : const Color(0xFFE5E4E0);
   Color get border =>
-      _isDark ? const Color(0xFF2A2A3A) : const Color(0xFFDDDDE8);
+      _isDark ? const Color(0xFF28283A) : const Color(0xFFDCDBD6);
   Color get divider =>
-      _isDark ? const Color(0xFF232330) : const Color(0xFFDDDDE5);
-  Color get text => _isDark ? const Color(0xFFF0F0F8) : const Color(0xFF111118);
+      _isDark ? const Color(0xFF1E1E2A) : const Color(0xFFE3E2DD);
+  Color get text =>
+      _isDark ? const Color(0xFFF2F0EB) : const Color(0xFF141310);
   Color get textMuted =>
-      _isDark ? const Color(0xFF9090A8) : const Color(0xFF55556A);
-  Color get accentSurface => _accent.withValues(alpha: _isDark ? 0.12 : 0.10);
-  Color get accentBorder => _accent.withValues(alpha: _isDark ? 0.30 : 0.25);
-  Color get accentLight => _isDark ? _accent.withValues(alpha: 0.85) : _accent;
+      _isDark ? const Color(0xFF8A8898) : const Color(0xFF6B6A64);
+
+  // ── Accent derivatives ──
+  Color get accentSurface => _accent.withValues(alpha: _isDark ? 0.10 : 0.08);
+  Color get accentBorder => _accent.withValues(alpha: _isDark ? 0.28 : 0.22);
+  Color get accentLight => _isDark ? _accent.withValues(alpha: 0.88) : _accent;
+
+  // ── Convenience ──
+  Color get shimmerBase => _isDark ? const Color(0xFF151520) : const Color(0xFFEBEAE6);
+  Color get shimmerHighlight => _isDark ? const Color(0xFF1C1C28) : const Color(0xFFF5F4F0);
+
+  // ── Card glow shadow ──
+  Color get cardShadow =>
+      _isDark ? Colors.black.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.08);
 
   ThemeData get materialTheme => ThemeData(
         brightness: _isDark ? Brightness.dark : Brightness.light,
@@ -47,11 +65,11 @@ class ThemeService extends ChangeNotifier {
         colorScheme: ColorScheme(
           brightness: _isDark ? Brightness.dark : Brightness.light,
           primary: _accent,
-          onPrimary: Colors.white,
+          onPrimary: Colors.black,
           secondary: _accent,
-          onSecondary: Colors.white,
-          error: Colors.red,
-          onError: Colors.white,
+          onSecondary: Colors.black,
+          error: const Color(0xFFCF6679),
+          onError: Colors.black,
           surface: surface,
           onSurface: text,
         ),
@@ -59,6 +77,28 @@ class ThemeService extends ChangeNotifier {
           backgroundColor: bg,
           foregroundColor: text,
           elevation: 0,
+          scrolledUnderElevation: 0,
+        ),
+        splashFactory: InkSparkle.splashFactory,
+        cardTheme: CardThemeData(
+          color: surface,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: border, width: 1),
+          ),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+        bottomSheetTheme: BottomSheetThemeData(
+          backgroundColor: surface,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
         ),
         useMaterial3: true,
       );

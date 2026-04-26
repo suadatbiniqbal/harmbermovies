@@ -38,7 +38,7 @@ class _SearchScreenState extends State<SearchScreen>
   _SearchTab _activeTab = _SearchTab.all;
 
   static const _genreColors = [
-    [Color(0xFFE50914), Color(0xFF831010)],
+    [Color(0xFFD4A847), Color(0xFF9A7B2F)],
     [Color(0xFF374151), Color(0xFF1F2937)],
     [Color(0xFF065F46), Color(0xFF064E3B)],
     [Color(0xFFFF6B35), Color(0xFFD84315)],

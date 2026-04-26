@@ -1,4 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/theme_service.dart';
 import 'home_screen.dart';
 import 'anime_home_screen.dart';
@@ -13,7 +15,8 @@ class RootScreen extends StatefulWidget {
   State<RootScreen> createState() => _RootScreenState();
 }
 
-class _RootScreenState extends State<RootScreen> {
+class _RootScreenState extends State<RootScreen>
+    with SingleTickerProviderStateMixin {
   int _index = 0;
   late final PageController _pageController;
 
@@ -61,80 +64,138 @@ class _RootScreenState extends State<RootScreen> {
             children: _screens,
           ),
           extendBody: true,
-          bottomNavigationBar: Theme(
-            data: Theme.of(context).copyWith(
-              navigationBarTheme: NavigationBarThemeData(
-                labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: t.isDark ? Colors.white : Colors.black,
-                    );
-                  }
-                  return TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: t.textMuted,
-                  );
-                }),
+          bottomNavigationBar: ClipRRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: t.isDark
+                      ? const Color(0xFF08080C).withValues(alpha: 0.82)
+                      : Colors.white.withValues(alpha: 0.88),
+                  border: Border(
+                    top: BorderSide(
+                      color: t.isDark
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.06),
+                    ),
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: SizedBox(
+                    height: 64,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: List.generate(5, (i) {
+                        final isSelected = _index == i;
+                        final icons = [
+                          Icons.home_rounded,
+                          Icons.animation_rounded,
+                          Icons.search_rounded,
+                          Icons.bookmark_rounded,
+                          Icons.settings_rounded,
+                        ];
+                        final outlinedIcons = [
+                          Icons.home_outlined,
+                          Icons.animation_outlined,
+                          Icons.search_outlined,
+                          Icons.bookmark_border_rounded,
+                          Icons.settings_outlined,
+                        ];
+                        final labels = [
+                          'Home',
+                          'Anime',
+                          'Search',
+                          'Watchlist',
+                          'Settings',
+                        ];
+                        return _NavItem(
+                          icon: isSelected ? icons[i] : outlinedIcons[i],
+                          label: labels[i],
+                          isSelected: isSelected,
+                          onTap: () => _onDestinationSelected(i),
+                          accent: t.accent,
+                          textColor: t.text,
+                          mutedColor: t.textMuted,
+                          isDark: t.isDark,
+                        );
+                      }),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            child: NavigationBar(
-              selectedIndex: _index,
-              onDestinationSelected: _onDestinationSelected,
-              backgroundColor:
-                  t.isDark ? const Color(0xFF0A0A0F) : Colors.white,
-              surfaceTintColor: Colors.transparent,
-              indicatorColor:
-                  (t.isDark ? Colors.white : Colors.black)
-                      .withValues(alpha: 0.10),
-              labelBehavior:
-                  NavigationDestinationLabelBehavior.alwaysShow,
-              height: 72,
-              elevation: 3,
-              shadowColor: Colors.black,
-              animationDuration: const Duration(milliseconds: 400),
-              destinations: [
-                NavigationDestination(
-                  icon: Icon(Icons.home_outlined, color: t.textMuted),
-                  selectedIcon: Icon(Icons.home_rounded,
-                      color: t.isDark ? Colors.white : Colors.black),
-                  label: 'Home',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.animation_outlined,
-                      color: t.textMuted),
-                  selectedIcon: Icon(Icons.animation_rounded,
-                      color: t.isDark ? Colors.white : Colors.black),
-                  label: 'Anime',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.search_outlined,
-                      color: t.textMuted),
-                  selectedIcon: Icon(Icons.search_rounded,
-                      color: t.isDark ? Colors.white : Colors.black),
-                  label: 'Search',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.bookmark_border_rounded,
-                      color: t.textMuted),
-                  selectedIcon: Icon(Icons.bookmark_rounded,
-                      color: t.isDark ? Colors.white : Colors.black),
-                  label: 'Watchlist',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.settings_outlined,
-                      color: t.textMuted),
-                  selectedIcon: Icon(Icons.settings_rounded,
-                      color: t.isDark ? Colors.white : Colors.black),
-                  label: 'Settings',
-                ),
-              ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final Color accent;
+  final Color textColor;
+  final Color mutedColor;
+  final bool isDark;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    required this.accent,
+    required this.textColor,
+    required this.mutedColor,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 64,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? accent.withValues(alpha: 0.14)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                size: 22,
+                color: isSelected
+                    ? accent
+                    : mutedColor.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected
+                    ? accent
+                    : mutedColor.withValues(alpha: 0.7),
+                letterSpacing: isSelected ? 0.1 : 0,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

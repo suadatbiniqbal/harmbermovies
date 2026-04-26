@@ -261,8 +261,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   trailing: Switch.adaptive(
                     value: t.isDark,
                     onChanged: (_) => t.toggle(),
-                    activeTrackColor: Colors.white,
+                    activeTrackColor: t.accent,
                     activeThumbColor: Colors.black,
+                    inactiveTrackColor: t.surface2,
                   ),
                   index: cardIndex++,
                 ),

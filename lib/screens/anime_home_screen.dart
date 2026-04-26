@@ -84,7 +84,10 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
         _hasError = trending.isEmpty && _trending.isEmpty;
       });
 
-      if (!_hasError) _loadChunk2();
+      if (!_hasError) {
+        _precacheHeroImages();
+        _loadChunk2();
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -128,6 +131,18 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
       });
     } catch (_) {
       if (mounted) setState(() => _isLoadingChunk2 = false);
+    }
+  }
+
+  void _precacheHeroImages() {
+    final heroItems = _trending.take(4);
+    for (final a in heroItems) {
+      if (a.bannerImage != null) {
+        precacheImage(CachedNetworkImageProvider(a.bannerImage!), context);
+      }
+      if (a.coverImage != null) {
+        precacheImage(CachedNetworkImageProvider(a.coverImage!), context);
+      }
     }
   }
 

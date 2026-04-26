@@ -118,6 +118,13 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startAnimations() async {
+    // Precache logo so it shows instantly — no white flash on first run
+    if (mounted) {
+      await precacheImage(
+        const AssetImage('assets/logo.png'),
+        context,
+      );
+    }
     await Future.delayed(const Duration(milliseconds: 200));
     if (!mounted) return;
     _logoController.forward();
@@ -126,7 +133,7 @@ class _SplashScreenState extends State<SplashScreen>
     _contentController.forward();
 
     // Start splash flow after animations settle
-    await Future.delayed(const Duration(milliseconds: 1800));
+    await Future.delayed(const Duration(milliseconds: 1500));
     if (!mounted) return;
     _handleSplashFlow();
   }
@@ -386,7 +393,7 @@ class _SplashScreenState extends State<SplashScreen>
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(28),
                           child: Image.asset(
-                            'assets/logo_main.png',
+                            'assets/logo.png',
                             width: 112,
                             height: 112,
                             fit: BoxFit.cover,
