@@ -53,8 +53,13 @@ android {
             // Use your real keystore instead of debug
             signingConfig = signingConfigs.getByName("release")
 
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // R8 shrinks & optimises code → smaller APK, faster startup
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
