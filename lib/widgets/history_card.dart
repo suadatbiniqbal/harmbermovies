@@ -4,9 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/history.dart';
 import '../services/theme_service.dart';
 import '../services/tmdb_service.dart';
+import '../services/history_service.dart';
 import '../screens/movie_detail_screen.dart';
 import '../screens/tv_detail_screen.dart';
 import '../screens/anime_detail_screen.dart';
+import '../services/anilist_service.dart';
 
 class HistoryCard extends StatelessWidget {
   final HistoryItem item;
@@ -59,6 +61,7 @@ class HistoryCard extends StatelessWidget {
                       imageUrl != null
                           ? CachedNetworkImage(
                               imageUrl: imageUrl,
+                              httpHeaders: AnilistService.getHeadersForUrl(imageUrl),
                               fit: BoxFit.cover,
                               alignment: Alignment.topCenter,
                               placeholder: (_, __) => _fallbackBox(t),
@@ -137,6 +140,33 @@ class HistoryCard extends StatelessWidget {
                             ),
                           ),
                         ),
+
+                      // Delete button overlay
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: GestureDetector(
+                          onTap: () {
+                            HistoryService.instance.removeItem(item.id, item.mediaType);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              color: Colors.white,
+                              size: 13,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

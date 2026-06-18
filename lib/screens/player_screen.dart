@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../services/theme_service.dart';
 import '../services/history_service.dart';
+
 
 class PlayerScreen extends StatefulWidget {
   final int id;
@@ -32,41 +34,86 @@ class PlayerScreen extends StatefulWidget {
   State<PlayerScreen> createState() => _PlayerScreenState();
 }
 
+
 class _PlayerScreenState extends State<PlayerScreen>
     with AutomaticKeepAliveClientMixin {
-  // Keep alive so orientation rebuild never destroys WebView state
   @override
   bool get wantKeepAlive => true;
 
   late WebViewController _controller;
   bool _loading = true;
   bool _hasError = false;
-  int _selectedServer = 0;
   late int _currentEpisode;
   late int _currentSeason;
-
-  // Guard: init WebView only once
   bool _webViewInitialized = false;
+  bool _isLandscape = true;
+  bool _showControls = true;
+  bool _showServerPicker = false;
+  int _selectedServer = 1;
+  Timer? _controlsTimer;
 
-  final _servers = const ['Server 1', 'Server 2', 'Server 3'];
+  void _startControlsTimer() {
+    _controlsTimer?.cancel();
+    _controlsTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) {
+        setState(() {
+          _showControls = false;
+        });
+      }
+    });
+  }
+
+  void _toggleControls() {
+    setState(() {
+      _showControls = !_showControls;
+    });
+    if (_showControls) {
+      _startControlsTimer();
+    } else {
+      _controlsTimer?.cancel();
+    }
+  }
+
+  void _toggleOrientation() {
+    setState(() {
+      _isLandscape = !_isLandscape;
+    });
+    if (_isLandscape) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    }
+  }
 
   String get _url {
-    if (_selectedServer == 0) {
+    if (_selectedServer == 2) {
       if (widget.isTV) {
-        return 'https://player.videasy.net/tv/${widget.id}/$_currentSeason/$_currentEpisode';
+        return 'https://vidlink.pro/tv/${widget.id}/$_currentSeason/$_currentEpisode';
       }
-      return 'https://player.videasy.net/movie/${widget.id}';
-    } else if (_selectedServer == 1) {
-      if (widget.isTV) {
-        return 'https://vidfast.pro/tv/${widget.id}/$_currentSeason/$_currentEpisode?autoPlay=true';
-      }
-      return 'https://vidfast.pro/movie/${widget.id}?autoPlay=true';
-    } else {
-      if (widget.isTV) {
-        return 'https://vidsrc.net/embed/tv?tmdb=${widget.id}&season=$_currentSeason&episode=$_currentEpisode';
-      }
-      return 'https://vidsrc.net/embed/movie?tmdb=${widget.id}';
+      return 'https://vidlink.pro/movie/${widget.id}';
     }
+    if (widget.isTV) {
+      return 'https://vidfast.pro/tv/${widget.id}/$_currentSeason/$_currentEpisode?autoPlay=true';
+    }
+    return 'https://vidfast.pro/movie/${widget.id}?autoPlay=true';
+  }
+
+  void _switchServer(int server) {
+    setState(() {
+      _selectedServer = server;
+      _showServerPicker = false;
+      _loading = true;
+      _hasError = false;
+    });
+    _webViewInitialized = false;
+    _initWebView();
+    _startControlsTimer();
   }
 
   static const _playerScript = '''
@@ -92,7 +139,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           if(t.tagName==='A'){
             var h = t.getAttribute('href')||'';
             var tg = t.getAttribute('target')||'';
-            var allowed = h.includes('videasy.net') || h.includes('vidfast.pro') || h.includes('vidsrc');
+            var allowed = h.includes('vidfast.pro');
             if(tg==='_blank' || (!allowed && !h.startsWith('#') && h.length>1)){
               e.preventDefault(); e.stopPropagation(); return false;
             }
@@ -121,7 +168,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       window.open = function(){ return null; };
 
       var style = document.createElement('style');
-      style.textContent = '* { touch-action: manipulation !important; } body { overflow: hidden !important; }';
+      style.textContent = '* { touch-action: manipulation !important; } body, html { overflow: hidden !important; margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; background: #000 !important; } iframe:not([src*="ads"]):not([src*="doubleclick"]) { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 999999 !important; border: none !important; } video { width: 100% !important; height: 100% !important; object-fit: contain !important; }';
       document.head.appendChild(style);
     })();
   ''';
@@ -130,15 +177,16 @@ class _PlayerScreenState extends State<PlayerScreen>
   void initState() {
     super.initState();
     SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
     _currentEpisode = widget.episode;
     _currentSeason = widget.season;
     _initWebView();
     _recordHistory();
+    _startControlsTimer();
   }
 
   void _recordHistory() {
@@ -153,11 +201,12 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   void _initWebView() {
-    if (_webViewInitialized) return; // ← KEY FIX: never re-init
+    if (_webViewInitialized) return;
     _webViewInitialized = true;
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setUserAgent('Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(NavigationDelegate(
         onPageStarted: (_) {
@@ -173,7 +222,6 @@ class _PlayerScreenState extends State<PlayerScreen>
           _controller.runJavaScript(_playerScript);
         },
         onWebResourceError: (error) {
-          // Only treat as fatal error for main frame, not sub-resources
           if (error.isForMainFrame == true) {
             if (mounted) {
               setState(() {
@@ -184,10 +232,9 @@ class _PlayerScreenState extends State<PlayerScreen>
           }
         },
         onNavigationRequest: (request) {
-          if (!request.url.contains('videasy.net') &&
-              !request.url.contains('vidfast.pro') &&
-              !request.url.contains('vidsrc.net') &&
-              !request.url.contains('vidsrc') &&
+          final allowed = request.url.contains('vidfast.pro') ||
+              request.url.contains('vidlink.pro');
+          if (!allowed &&
               !request.url.startsWith('about:') &&
               !request.url.startsWith('data:') &&
               !request.url.startsWith('blob:')) {
@@ -200,7 +247,6 @@ class _PlayerScreenState extends State<PlayerScreen>
       ..loadRequest(Uri.parse(_url));
   }
 
-  // Reload with a fresh URL (episode/server change), resetting error state
   void _reloadPlayer() {
     if (!mounted) return;
     setState(() {
@@ -213,284 +259,407 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   @override
   void dispose() {
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    _controlsTimer?.cancel();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
-  void _nextEpisode() {
-    if (!widget.isTV) return;
-    final maxEp = widget.totalEpisodes ?? 999;
-    if (_currentEpisode < maxEp) {
-      setState(() => _currentEpisode++);
-      _reloadPlayer();
-    }
-  }
-
-  void _previousEpisode() {
-    if (!widget.isTV || _currentEpisode <= 1) return;
-    setState(() => _currentEpisode--);
-    _reloadPlayer();
-  }
-
-  String get _currentTitle {
-    if (widget.isTV) {
-      return '${widget.title} S$_currentSeason E$_currentEpisode';
-    }
-    return widget.title;
-  }
-
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    super.build(context);
     final t = ThemeService.instance;
-    final isLandscape =
-        MediaQuery.of(context).orientation == Orientation.landscape;
 
-    // System UI: don't call setState here — just side effects
-    if (isLandscape) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    } else {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    }
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: isLandscape
-          ? null
-          : AppBar(
-              backgroundColor: const Color(0xFF0A0A0F),
-              foregroundColor: Colors.white,
-              title: Text(
-                _currentTitle,
-                style: GoogleFonts.inter(
-                    fontSize: 16, fontWeight: FontWeight.w600),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              elevation: 0,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.fullscreen_rounded,
-                      color: Colors.white70),
-                  tooltip: 'Full Screen',
-                  onPressed: () {
-                    SystemChrome.setPreferredOrientations([
-                      DeviceOrientation.landscapeLeft,
-                      DeviceOrientation.landscapeRight,
-                    ]);
-                  },
-                ),
-                PopupMenuButton<int>(
-                  icon: const Icon(Icons.dns_rounded,
-                      color: Colors.white70, size: 22),
-                  color: const Color(0xFF1A1A26),
-                  onSelected: (i) {
-                    setState(() => _selectedServer = i);
-                    _reloadPlayer();
-                  },
-                  itemBuilder: (_) => List.generate(
-                    _servers.length,
-                    (i) => PopupMenuItem(
-                      value: i,
-                      child: Row(
-                        children: [
-                          Icon(
-                            _selectedServer == i
-                                ? Icons.radio_button_checked
-                                : Icons.radio_button_off,
-                            color: _selectedServer == i
-                                ? t.accent
-                                : Colors.white54,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(_servers[i],
-                              style: GoogleFonts.inter(
-                                  color: Colors.white, fontSize: 14)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          if (_showServerPicker) {
+            setState(() => _showServerPicker = false);
+          } else {
+            _toggleControls();
+          }
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            RepaintBoundary(
+              child: WebViewWidget(controller: _controller),
             ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                // WebView is always in the tree — never conditionally removed
-                WebViewWidget(controller: _controller),
 
-                if (isLandscape)
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    child: IconButton(
-                      icon: const Icon(Icons.fullscreen_exit_rounded,
-                          color: Colors.white, size: 28),
-                      style:
-                          IconButton.styleFrom(backgroundColor: Colors.black54),
-                      tooltip: 'Exit Full Screen',
-                      onPressed: () {
-                        SystemChrome.setPreferredOrientations([
-                          DeviceOrientation.portraitUp,
-                        ]);
-                      },
+            if (_showControls && !_showServerPicker) ...[
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xBB000000), Colors.transparent],
                     ),
                   ),
-
-                if (_hasError)
-                  Container(
-                    color: Colors.black,
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.videocam_off_rounded,
-                              color: Colors.white54, size: 48),
-                          const SizedBox(height: 16),
-                          Text('Content Not Available',
-                              style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 8),
-                          Text('Try a different server or check back later.',
-                              style: GoogleFonts.inter(
-                                  color: Colors.white54, fontSize: 14)),
-                          const SizedBox(height: 20),
-                          GestureDetector(
-                            onTap: _reloadPlayer,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: t.accent,
-                                borderRadius: BorderRadius.circular(10),
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: RepaintBoundary(
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.15)),
+                            ),
+                            child: const Icon(Icons.arrow_back_rounded,
+                                color: Colors.white, size: 22),
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      // ✅ FIX 1: decoration and child are now correct separate params
+                      GestureDetector(
+                        onTap: () {
+                          _controlsTimer?.cancel();
+                          setState(() => _showServerPicker = true);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6C63FF)
+                                .withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.2)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.dns_rounded,
+                                  color: Colors.white, size: 14),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Source $_selectedServer',
+                                style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700),
                               ),
-                              child: Text('Retry',
-                                  style: GoogleFonts.inter(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () {
+                          _toggleOrientation();
+                          _startControlsTimer();
+                        },
+                        child: RepaintBoundary(
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.15)),
+                            ),
+                            child: Icon(
+                              _isLandscape
+                                  ? Icons.fullscreen_exit_rounded
+                                  : Icons.fullscreen_rounded,
+                              color: Colors.white,
+                              size: 22,
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ).animate().fadeIn(duration: 400.ms),
-
-                if (_loading)
-                  Container(
-                    color: Colors.black,
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 40,
-                            height: 40,
-                            child: CircularProgressIndicator(
-                              color: t.accent,
-                              strokeWidth: 3,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text('Loading player...',
-                              style: GoogleFonts.inter(
-                                  color: Colors.white54, fontSize: 14)),
-                        ],
-                      ),
-                    ),
-                  ).animate().fadeIn(duration: 200.ms),
-              ],
-            ),
-          ),
-          if (widget.isTV && !isLandscape)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0A0A0F),
-                border: Border(
-                  top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                    ],
+                  ),
                 ),
               ),
-              child: Row(
-                children: [
-                  _episodeButton(
-                    icon: Icons.skip_previous_rounded,
-                    label: 'Prev',
-                    onTap: _currentEpisode > 1 ? _previousEpisode : null,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
+
+              if (widget.isTV)
+                Positioned(
+                  bottom: 20,
+                  right: 20,
+                  child: Row(
+                    children: [
+                      if (_currentEpisode > 1)
+                        _playerBtn(Icons.skip_previous_rounded, () {
+                          setState(() {
+                            _currentEpisode--;
+                            _loading = true;
+                            _hasError = false;
+                          });
+                          _controller.loadRequest(Uri.parse(_url));
+                          _startControlsTimer();
+                        }),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.15)),
+                        ),
                         child: Text(
-                          'Season $_currentSeason · Episode $_currentEpisode',
+                          'S$_currentSeason E$_currentEpisode',
                           style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _playerBtn(Icons.skip_next_rounded, () {
+                        setState(() {
+                          _currentEpisode++;
+                          _loading = true;
+                          _hasError = false;
+                        });
+                        _controller.loadRequest(Uri.parse(_url));
+                        _startControlsTimer();
+                      }),
+                    ],
+                  ),
+                ),
+            ],
+
+            // ✅ FIX 2: Column children list properly closed
+            if (_showServerPicker)
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: () => setState(() => _showServerPicker = false),
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.72),
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () {},
+                        child: Container(
+                          width: 300,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1A1A2E),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1)),
                           ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Select Source',
+                                style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Choose your streaming source',
+                                style: GoogleFonts.inter(
+                                    color: Colors.white54, fontSize: 13),
+                              ),
+                              const SizedBox(height: 20),
+                              _serverTile(
+                                  1,
+                                  'Source 1',
+                                  'Primary Stream',
+                                  Icons.play_circle_rounded,
+                                  const Color(0xFF6C63FF)),
+                              const SizedBox(height: 10),
+                              _serverTile(
+                                  2,
+                                  'Source 2',
+                                  'Backup Stream',
+                                  Icons.play_circle_outline_rounded,
+                                  const Color(0xFF00C9A7)),
+                              const SizedBox(height: 14),
+                              TextButton(
+                                onPressed: () =>
+                                    setState(() => _showServerPicker = false),
+                                child: Text(
+                                  'Cancel',
+                                  style: GoogleFonts.inter(
+                                      color: Colors.white54,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],   // ← closes children list
+                          ),     // ← closes Column
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  _episodeButton(
-                    icon: Icons.skip_next_rounded,
-                    label: 'Next',
-                    onTap: _nextEpisode,
-                  ),
-                ],
+                ),
               ),
-            ).animate().fadeIn(delay: 500.ms, duration: 300.ms),
-        ],
+
+            if (_hasError)
+              RepaintBoundary(
+                child: Container(
+                  color: Colors.black,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.videocam_off_rounded,
+                            color: Colors.white54, size: 48),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Content Not Available',
+                          style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Please check your internet connection or try again.',
+                          style: GoogleFonts.inter(
+                              color: Colors.white54, fontSize: 14),
+                        ),
+                        const SizedBox(height: 20),
+                        GestureDetector(
+                          onTap: () {
+                            _reloadPlayer();
+                            _startControlsTimer();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: t.accent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              'Retry',
+                              style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ).animate().fadeIn(duration: 400.ms),
+              ),
+
+            if (_loading)
+              RepaintBoundary(
+                child: Container(
+                  color: Colors.black,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            color: t.accent,
+                            strokeWidth: 3,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Loading player...',
+                          style: GoogleFonts.inter(
+                              color: Colors.white54, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                ).animate().fadeIn(duration: 200.ms),
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _episodeButton({
-    required IconData icon,
-    required String label,
-    VoidCallback? onTap,
-  }) {
-    final enabled = onTap != null;
+  Widget _serverTile(
+      int server, String label, String subtitle, IconData icon, Color color) {
+    final isSelected = _selectedServer == server;
+    return GestureDetector(
+      onTap: () => _switchServer(server),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? color.withValues(alpha: 0.15)
+              : Colors.white.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? color.withValues(alpha: 0.7)
+                : Colors.white.withValues(alpha: 0.1),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.18),
+                  shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700)),
+                  Text(subtitle,
+                      style: GoogleFonts.inter(
+                          color: Colors.white54, fontSize: 11)),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration:
+                    BoxDecoration(color: color, shape: BoxShape.circle),
+                child: const Icon(Icons.check, color: Colors.white, size: 12),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _playerBtn(IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.all(9),
         decoration: BoxDecoration(
-          color: enabled
-              ? Colors.white.withValues(alpha: 0.12)
-              : Colors.white.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(10),
+          color: Colors.black.withValues(alpha: 0.6),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon,
-                color: enabled ? Colors.white : Colors.white24, size: 20),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                color: enabled ? Colors.white : Colors.white24,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }

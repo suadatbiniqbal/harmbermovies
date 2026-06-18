@@ -119,8 +119,8 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
     setState(() => _isLoadingChunk2 = true);
     try {
       final nextChunk = await Future.wait([
-        _api.getPopularAnime(),
-        _api.getTopRatedAnime(),
+        _api.getPopularAnime().catchError((_) => <Anime>[]),
+        _api.getTopRatedAnime().catchError((_) => <Anime>[]),
       ]);
       if (!mounted) return;
       setState(() {
@@ -138,10 +138,10 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
     final heroItems = _trending.take(4);
     for (final a in heroItems) {
       if (a.bannerImage != null) {
-        precacheImage(CachedNetworkImageProvider(a.bannerImage!), context);
+        precacheImage(CachedNetworkImageProvider(a.bannerImage!, headers: AnilistService.imageHeaders), context);
       }
       if (a.coverImage != null) {
-        precacheImage(CachedNetworkImageProvider(a.coverImage!), context);
+        precacheImage(CachedNetworkImageProvider(a.coverImage!, headers: AnilistService.imageHeaders), context);
       }
     }
   }
@@ -209,12 +209,13 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
                 const SizedBox(height: 8),
                 _buildAnimeSection(
                     'Trending Anime', Icons.trending_up, _trending),
+                const AdBannerContainer(),
                 _buildAnimeSection('Popular Anime', Icons.local_fire_department,
                     _popular, !_chunk2Loaded),
-                const AdBannerContainer(),
-                const SizedBox(height: 8),
+                const AdNativeContainer(),
                 _buildAnimeSection('Top Rated Anime', Icons.star_rounded,
                     _topRated, !_chunk2Loaded),
+                const AdBannerContainer(),
                 const SizedBox(height: 60),
               ],
             ),
@@ -375,6 +376,7 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen>
           if (anime.bannerImage != null || anime.coverImage != null)
             CachedNetworkImage(
               imageUrl: anime.bannerImage ?? anime.coverImage ?? '',
+              httpHeaders: AnilistService.imageHeaders,
               fit: BoxFit.cover,
               alignment: Alignment.center,
               placeholder: (_, __) => Container(color: const Color(0xFF080808)),

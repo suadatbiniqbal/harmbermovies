@@ -80,4 +80,9 @@ class HistoryService extends ChangeNotifier {
     _items.clear();
     await _save();
   }
+
+  Future<void> removeItem(int id, String mediaType) async {
+    _items.removeWhere((i) => i.id == id && i.mediaType == mediaType);
+    await _save();
+  }
 }

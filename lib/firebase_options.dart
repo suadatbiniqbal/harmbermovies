@@ -7,5 +7,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: "227933260927",
     projectId: "harmber",
     storageBucket: "harmber.firebasestorage.app",
+    databaseURL: "https://harmber-default-rtdb.firebaseio.com",
   );
 }

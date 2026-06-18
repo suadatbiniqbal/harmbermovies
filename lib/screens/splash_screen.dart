@@ -1,9 +1,6 @@
 import 'dart:math' as math;
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'root_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -30,10 +27,7 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _spinnerOpacity;
   late Animation<double> _pulseAnim;
 
-  static const String _adUrl =
-      'https://www.profitablecpmratenetwork.com/hpp7szbwc?key=e427111ef791f9b6b39b05710a5e3ca2';
-  static const String _lastAdKey = 'last_ad_shown_time';
-  static const int _adCooldownHours = 6;
+
 
   @override
   void initState() {
@@ -148,176 +142,8 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  Future<bool> _shouldShowAd() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastShown = prefs.getInt(_lastAdKey) ?? 0;
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final hoursSinceLastAd = (now - lastShown) / (1000 * 60 * 60);
-    return hoursSinceLastAd >= _adCooldownHours;
-  }
-
-  Future<void> _markAdShown() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_lastAdKey, DateTime.now().millisecondsSinceEpoch);
-  }
-
-  Future<void> _handleSplashFlow() async {
-    final showAd = await _shouldShowAd();
-    if (showAd && mounted) {
-      await _showSupportDialog();
-    }
+  void _handleSplashFlow() {
     if (mounted) _navigateToApp();
-  }
-
-  Future<void> _showSupportDialog() async {
-    if (!mounted) return;
-
-    await showCupertinoDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => PopScope(
-        canPop: false,
-        child: CupertinoAlertDialog(
-          title: Column(
-            children: [
-              const Icon(
-                CupertinoIcons.heart_fill,
-                color: CupertinoColors.white,
-                size: 28,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Support Harmber',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 17,
-                  letterSpacing: -0.3,
-                ),
-              ),
-            ],
-          ),
-          content: Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Harmber Movies is 100% free — no subscriptions, ever. You support us just by visiting a sponsor page!',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(fontSize: 13, height: 1.5),
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.systemGrey6,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'How it works:',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: CupertinoColors.systemGrey,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      _buildStep('1', 'Tap "Support Now" below', CupertinoColors.systemGrey),
-                      _buildStep('2', 'Stay on the page for 10–20 seconds', CupertinoColors.systemGrey),
-                      _buildStep('3', 'Come back to the app — done!', CupertinoColors.systemGrey),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(CupertinoIcons.clock,
-                        size: 13, color: CupertinoColors.systemGrey),
-                    const SizedBox(width: 4),
-                    Text(
-                      'This won\'t appear again for 6 hours',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: CupertinoColors.systemGrey,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              onPressed: () async {
-                Navigator.of(ctx).pop();
-                try {
-                  final uri = Uri.parse(_adUrl);
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  await _markAdShown();
-                } catch (_) {}
-                if (mounted) _showReturnToast();
-              },
-              child: Text(
-                'Support Now',
-                style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w700, fontSize: 15),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStep(String num, String text, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Container(
-            width: 18,
-            height: 18,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(num,
-                  style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: color)),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(text,
-                style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: color,
-                    fontWeight: FontWeight.w500,
-                    height: 1.3)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showReturnToast() {
-    final overlay = Overlay.of(context);
-    final entry = OverlayEntry(
-      builder: (_) => _ToastWidget(
-        message: '⏳ Wait 10–20 sec on the page, then come back!',
-      ),
-    );
-    overlay.insert(entry);
-    Future.delayed(const Duration(seconds: 4), () => entry.remove());
   }
 
   void _navigateToApp() {

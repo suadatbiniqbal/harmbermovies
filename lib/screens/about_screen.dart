@@ -195,35 +195,7 @@ class AboutScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
 
-          // Credits
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: t.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: t.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Credits',
-                    style: GoogleFonts.inter(
-                        color: t.text,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700)),
-                const SizedBox(height: 12),
-                _creditRow(
-                    Icons.api_rounded, 'Data by TMDB', 'themoviedb.org', t),
-                _creditRow(
-                    Icons.code_rounded, 'Built with Flutter', 'flutter.dev', t),
-                _creditRow(Icons.play_circle_outline, 'Player by harmber',
-                    'harmber.xyz', t),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
 
           // Disclaimer
           Container(
@@ -275,32 +247,6 @@ class AboutScreen extends StatelessWidget {
           Text(text,
               style: GoogleFonts.inter(
                   color: t.text, fontSize: 14, fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
-
-  Widget _creditRow(
-      IconData icon, String title, String subtitle, ThemeService t) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Icon(icon,
-              color: t.isDark ? Colors.white70 : Colors.black87, size: 20),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style: GoogleFonts.inter(
-                      color: t.text,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600)),
-              Text(subtitle,
-                  style: GoogleFonts.inter(color: t.textMuted, fontSize: 12)),
-            ],
-          ),
         ],
       ),
     );

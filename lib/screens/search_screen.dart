@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/movie.dart';
@@ -81,6 +82,25 @@ class _SearchScreenState extends State<SearchScreen>
     37: Icons.landscape_rounded,
   };
 
+  static const _animeGenreIcons = <String, IconData>{
+    'Action': Icons.local_fire_department_rounded,
+    'Adventure': Icons.explore_rounded,
+    'Comedy': Icons.sentiment_very_satisfied_rounded,
+    'Drama': Icons.theater_comedy_rounded,
+    'Fantasy': Icons.auto_awesome_rounded,
+    'Horror': Icons.nightlight_rounded,
+    'Mecha': Icons.rocket_launch_rounded,
+    'Music': Icons.music_note_rounded,
+    'Mystery': Icons.search_rounded,
+    'Psychological': Icons.psychology_rounded,
+    'Romance': Icons.favorite_rounded,
+    'Sci-Fi': Icons.science_rounded,
+    'Slice of Life': Icons.weekend_rounded,
+    'Sports': Icons.sports_soccer_rounded,
+    'Supernatural': Icons.auto_awesome_motion_rounded,
+    'Thriller': Icons.warning_rounded,
+  };
+
   @override
   void initState() {
     super.initState();
@@ -151,19 +171,19 @@ class _SearchScreenState extends State<SearchScreen>
       switch (_activeTab) {
         case _SearchTab.all:
           final r = await Future.wait([
-            TmdbService.instance.searchMulti(term),
-            AnilistService.instance.searchAnime(term),
+            TmdbService.instance.searchMulti(term).catchError((_) => <Movie>[]),
+            AnilistService.instance.searchAnime(term).catchError((_) => <Anime>[]),
           ]);
-          results = [...(r[0] as List<Movie>), ...(r[1] as List<Anime>)];
+          results = [...r[0], ...r[1]];
           break;
         case _SearchTab.movies:
-          results = await TmdbService.instance.searchMovies(term);
+          results = await TmdbService.instance.searchMovies(term).catchError((_) => <Movie>[]);
           break;
         case _SearchTab.tv:
-          results = await TmdbService.instance.searchTV(term);
+          results = await TmdbService.instance.searchTV(term).catchError((_) => <Movie>[]);
           break;
         case _SearchTab.anime:
-          results = await AnilistService.instance.searchAnime(term);
+          results = await AnilistService.instance.searchAnime(term).catchError((_) => <Anime>[]);
           break;
       }
       if (!mounted || _controller.text.trim() != term) return;
@@ -189,6 +209,32 @@ class _SearchScreenState extends State<SearchScreen>
         ),
       );
     } catch (_) {}
+  }
+
+  void _openAnimeGenre(Genre genre) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+      final list = await AnilistService.instance.getAnimeByGenre(genre.name);
+      if (mounted) {
+        Navigator.pop(context); // Dismiss loading dialog
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => _AnimeGenreResultsScreen(genre: genre, animeList: list),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        Navigator.pop(context); // Dismiss loading dialog
+      }
+    }
   }
 
   @override
@@ -340,7 +386,7 @@ class _SearchScreenState extends State<SearchScreen>
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       physics: const BouncingScrollPhysics(),
-      cacheExtent: 400,
+      scrollCacheExtent: const ScrollCacheExtent.pixels(400.0),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 136,
         childAspectRatio: 0.52,
@@ -412,6 +458,7 @@ class _SearchScreenState extends State<SearchScreen>
                     imageUrl.isNotEmpty
                         ? CachedNetworkImage(
                             imageUrl: imageUrl,
+                            httpHeaders: AnilistService.getHeadersForUrl(imageUrl),
                             fit: BoxFit.cover,
                             placeholder: (_, __) =>
                                 Container(color: t.surface2),
@@ -546,10 +593,12 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   Widget _buildGenresGrid(ThemeService t) {
-    if (_loadingGenres) {
+    final bool isAnimeTab = _activeTab == _SearchTab.anime;
+
+    if (!isAnimeTab && _loadingGenres) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_hasError) {
+    if (!isAnimeTab && _hasError) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -582,6 +631,27 @@ class _SearchScreenState extends State<SearchScreen>
       );
     }
 
+    final List<Genre> displayedGenres = isAnimeTab
+        ? [
+            Genre(id: 1, name: 'Action'),
+            Genre(id: 2, name: 'Adventure'),
+            Genre(id: 3, name: 'Comedy'),
+            Genre(id: 4, name: 'Drama'),
+            Genre(id: 5, name: 'Fantasy'),
+            Genre(id: 6, name: 'Horror'),
+            Genre(id: 7, name: 'Mecha'),
+            Genre(id: 8, name: 'Music'),
+            Genre(id: 9, name: 'Mystery'),
+            Genre(id: 10, name: 'Psychological'),
+            Genre(id: 11, name: 'Romance'),
+            Genre(id: 12, name: 'Sci-Fi'),
+            Genre(id: 13, name: 'Slice of Life'),
+            Genre(id: 14, name: 'Sports'),
+            Genre(id: 15, name: 'Supernatural'),
+            Genre(id: 16, name: 'Thriller'),
+          ]
+        : _genres;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
@@ -594,7 +664,7 @@ class _SearchScreenState extends State<SearchScreen>
                     color: t.accent, borderRadius: BorderRadius.circular(2))),
             const SizedBox(width: 10),
             Text(
-              'Browse Categories',
+              isAnimeTab ? 'Browse Anime Genres' : 'Browse Categories',
               style: GoogleFonts.inter(
                 color: t.text,
                 fontSize: 22,
@@ -608,12 +678,14 @@ class _SearchScreenState extends State<SearchScreen>
         Wrap(
           spacing: 10,
           runSpacing: 10,
-          children: List.generate(_genres.length, (i) {
-            final genre = _genres[i];
+          children: List.generate(displayedGenres.length, (i) {
+            final genre = displayedGenres[i];
             final colors = _genreColors[i % _genreColors.length];
-            final icon = _genreIcons[genre.id] ?? Icons.movie_rounded;
+            final icon = isAnimeTab
+                ? (_animeGenreIcons[genre.name] ?? Icons.animation_rounded)
+                : (_genreIcons[genre.id] ?? Icons.movie_rounded);
             return GestureDetector(
-              onTap: () => _openGenre(genre),
+              onTap: () => isAnimeTab ? _openAnimeGenre(genre) : _openGenre(genre),
               child: Container(
                 width: (MediaQuery.of(context).size.width - 42) / 2,
                 padding: const EdgeInsets.all(16),
@@ -763,6 +835,113 @@ class _GenreResultsScreen extends StatelessWidget {
                       Text(m.year,
                           style: GoogleFonts.inter(
                               color: t.textMuted, fontSize: 11)),
+                    ],
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+class _AnimeGenreResultsScreen extends StatelessWidget {
+  final Genre genre;
+  final List<Anime> animeList;
+
+  const _AnimeGenreResultsScreen({required this.genre, required this.animeList});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = ThemeService.instance;
+    return Scaffold(
+      backgroundColor: t.bg,
+      appBar: AppBar(
+        backgroundColor: t.bg,
+        foregroundColor: t.text,
+        title: Text(genre.name,
+            style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
+        elevation: 0,
+      ),
+      body: animeList.isEmpty
+          ? Center(
+              child: Text('No anime found',
+                  style: GoogleFonts.inter(color: t.textMuted)))
+          : GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 136,
+                childAspectRatio: 0.55,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: animeList.length,
+              itemBuilder: (_, i) {
+                final a = animeList[i];
+                return GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AnimeDetailScreen(id: a.id, initialAnime: a),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: a.coverImage != null
+                                  ? CachedNetworkImage(
+                                      imageUrl: a.coverImage!,
+                                      httpHeaders: AnilistService.imageHeaders,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                    )
+                                  : Container(color: t.surface2),
+                            ),
+                            if (a.averageScore != null)
+                              Positioned(
+                                bottom: 6,
+                                left: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.7),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.star_rounded,
+                                          color: Color(0xFFFFD700), size: 10),
+                                      const SizedBox(width: 2),
+                                      Text(a.averageScore!.toStringAsFixed(1),
+                                          style: GoogleFonts.inter(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(a.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                              color: t.text,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700)),
+                      if (a.year != null)
+                        Text(a.year.toString(),
+                            style: GoogleFonts.inter(
+                                color: t.textMuted, fontSize: 11)),
                     ],
                   ),
                 );

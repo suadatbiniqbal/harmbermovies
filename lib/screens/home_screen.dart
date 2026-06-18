@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -6,14 +7,20 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/movie.dart';
+import '../models/sports_match.dart';
+import '../models/iptv_channel.dart';
 import '../services/tmdb_service.dart';
 import '../services/theme_service.dart';
 import '../services/update_service.dart';
+import '../services/sports_service.dart';
 import '../widgets/section_row.dart';
 import '../widgets/ad_banner.dart';
 import 'movie_detail_screen.dart';
 import 'tv_detail_screen.dart';
+import 'sports_player_screen.dart';
+import 'iptv_player_screen.dart';
 import '../widgets/history_row.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -46,6 +53,12 @@ class _HomeScreenState extends State<HomeScreen>
   bool _chunk3Loaded = false;
   bool _isLoadingChunk2 = false;
   bool _isLoadingChunk3 = false;
+  // Sports
+  List<SportsMatch> _sports = [];
+  StreamSubscription<List<SportsMatch>>? _sportsSub;
+  // Countdown tickers per match id
+  final Map<String, Duration> _countdowns = {};
+  Timer? _countdownTicker;
 
   @override
   void initState() {
@@ -54,12 +67,43 @@ class _HomeScreenState extends State<HomeScreen>
     _checkUpdate();
     _checkDiscordPromo();
     _scrollController.addListener(_onScroll);
+    _initSports();
+  }
+
+  void _initSports() {
+    SportsService.instance.startListening();
+    _sportsSub = SportsService.instance.matchesStream.listen((matches) {
+      if (!mounted) return;
+      setState(() => _sports = matches);
+      _startCountdownTicker();
+    });
+  }
+
+  void _startCountdownTicker() {
+    _countdownTicker?.cancel();
+    _countdownTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      bool needsRebuild = false;
+      for (final m in _sports) {
+        final r = m.timeUntilStreamOpen;
+        if (r != null) {
+          _countdowns[m.id] = r;
+          needsRebuild = true;
+        } else {
+          _countdowns.remove(m.id);
+        }
+      }
+      if (needsRebuild) setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _sportsSub?.cancel();
+    _countdownTicker?.cancel();
+    SportsService.instance.stopListening();
     super.dispose();
   }
 
@@ -361,40 +405,48 @@ class _HomeScreenState extends State<HomeScreen>
             _buildHeroCarousel(t),
             const AdBannerContainer(),
             const HistoryRow(mediaTypeFilter: 'tmdb'),
+            _buildSportsSection(t),
             SectionRow(
                 title: 'Trending Now',
                 icon: Icons.trending_up_rounded,
                 movies: _trending),
+            const AdBannerContainer(),
             SectionRow(
                 title: 'Popular Movies',
                 icon: Icons.local_fire_department_rounded,
                 movies: _popular,
                 isLoading: !_chunk2Loaded),
+            const AdBannerContainer(),
             SectionRow(
                 title: 'Now Playing',
                 icon: Icons.play_circle_outline_rounded,
                 movies: _nowPlaying,
                 isLoading: !_chunk3Loaded),
+            const AdNativeContainer(),
             SectionRow(
                 title: 'Top Rated',
                 icon: Icons.star_rounded,
                 movies: _topRated,
                 isLoading: !_chunk2Loaded),
+            const AdBannerContainer(),
             SectionRow(
                 title: 'Coming Soon',
                 icon: Icons.upcoming_rounded,
                 movies: _upcoming,
                 isLoading: !_chunk3Loaded),
+            const AdBannerContainer(),
             SectionRow(
                 title: 'Popular TV',
                 icon: Icons.tv_rounded,
                 movies: _popularTV,
                 isLoading: !_chunk3Loaded),
+            const AdBannerContainer(),
             SectionRow(
                 title: 'Airing Today',
                 icon: Icons.live_tv_rounded,
                 movies: _airingToday,
                 isLoading: !_chunk3Loaded),
+            const AdBannerContainer(),
             SectionRow(
                 title: 'Top Rated TV',
                 icon: Icons.emoji_events_rounded,
@@ -474,13 +526,19 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildHeroCarousel(ThemeService t) {
-    final heroes = _trending.take(6).toList();
-    if (heroes.isEmpty) return const SizedBox(height: 560);
+    // Latest 2 sports matches with a hero image prepended
+    final sportsHeroes = _sports
+        .where((m) => m.heroImageUrl.isNotEmpty)
+        .take(2)
+        .toList();
+    final movieHeroes = _trending.take(6).toList();
+    final totalCount = sportsHeroes.length + movieHeroes.length;
+    if (totalCount == 0) return const SizedBox(height: 560);
 
     return Stack(
       children: [
         CarouselSlider.builder(
-          itemCount: heroes.length,
+          itemCount: totalCount,
           options: CarouselOptions(
             height: 560,
             viewportFraction: 1.0,
@@ -490,17 +548,20 @@ class _HomeScreenState extends State<HomeScreen>
             autoPlayCurve: Curves.easeInOutCubic,
             onPageChanged: (i, _) => setState(() => _heroIndex = i),
           ),
-          itemBuilder: (_, i, __) => _buildHeroItem(heroes[i], t, i),
+          itemBuilder: (_, i, __) {
+            if (i < sportsHeroes.length) {
+              return _buildSportsHeroItem(sportsHeroes[i], t);
+            }
+            return _buildHeroItem(movieHeroes[i - sportsHeroes.length], t, i);
+          },
         ),
-
-        // Page indicators — bottom right
         Positioned(
           bottom: 24,
           right: 20,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: List.generate(
-              heroes.length,
+              totalCount,
               (i) => AnimatedContainer(
                 duration: const Duration(milliseconds: 350),
                 curve: Curves.easeOutCubic,
@@ -520,6 +581,114 @@ class _HomeScreenState extends State<HomeScreen>
       ],
     );
   }
+
+  Widget _buildSportsHeroItem(SportsMatch match, ThemeService t) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => SportsPlayerScreen(match: match))),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CachedNetworkImage(
+            imageUrl: match.heroImageUrl,
+            fit: BoxFit.cover,
+            placeholder: (_, __) => Container(color: const Color(0xFF0A0A15)),
+            errorWidget: (_, __, ___) => Container(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.center, radius: 1.4,
+                  colors: [Color(0xFF1A1040), Color(0xFF0A0A15)],
+                ),
+              ),
+            ),
+          ),
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                colors: [Color(0x33000000), Color(0x00000000), Color(0xBB000000), Color(0xFF000000)],
+                stops: [0.0, 0.3, 0.7, 1.0],
+              ),
+            ),
+          ),
+          // Live badge
+          if (match.isLive)
+            Positioned(
+              top: 60, left: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.red, borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+                  const SizedBox(width: 5),
+                  Text('LIVE', style: GoogleFonts.inter(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                ]),
+              ),
+            ),
+          Positioned(
+            left: 20, right: 20, bottom: 42,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (match.leagueName.isNotEmpty)
+                  _heroBadge(icon: Icons.sports_soccer_rounded, text: match.leagueName),
+                const SizedBox(height: 12),
+                // Teams
+                Row(
+                  children: [
+                    _sportsLogoSmall(match.team1LogoUrl),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '${match.team1Name}  vs  ${match.team2Name}',
+                        style: GoogleFonts.inter(
+                            color: Colors.white, fontSize: 22,
+                            fontWeight: FontWeight.w900, letterSpacing: -0.3, height: 1.2),
+                        maxLines: 2, overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    _sportsLogoSmall(match.team2LogoUrl),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => SportsPlayerScreen(match: match))),
+                  icon: const Icon(Icons.sports_rounded, size: 20),
+                  label: Text(match.isLive ? 'Watch Live' : 'View Match',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14)),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: match.isLive ? Colors.red : Colors.white,
+                    foregroundColor: match.isLive ? Colors.white : Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sportsLogoSmall(String url) => Container(
+    width: 38, height: 38,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withValues(alpha: 0.1),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+    ),
+    child: ClipOval(
+      child: url.isNotEmpty
+          ? CachedNetworkImage(imageUrl: url, fit: BoxFit.contain,
+              errorWidget: (_, __, ___) => const Icon(Icons.sports_soccer_rounded, color: Colors.white38, size: 18))
+          : const Icon(Icons.sports_soccer_rounded, color: Colors.white38, size: 18),
+    ),
+  );
 
   Widget _buildHeroItem(Movie movie, ThemeService t, int index) {
     return GestureDetector(
@@ -790,5 +959,354 @@ class _HomeScreenState extends State<HomeScreen>
         ],
       ),
     );
+  }
+
+  // ─── SPORTS SECTION ────────────────────────────────────────────────────────
+  Widget _buildSportsSection(ThemeService t) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      colors: [Colors.red, Colors.orange]),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.live_tv_rounded, color: Colors.white, size: 16),
+              ),
+              const SizedBox(width: 10),
+              Text('Live Sports',
+                  style: GoogleFonts.inter(
+                      fontSize: 18, fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                      color: t.text)),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+                ),
+                child: Text('LIVE', style: GoogleFonts.inter(
+                    color: Colors.red, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 190,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: IptvChannels.all.length + _sports.length,
+            itemBuilder: (_, i) {
+              if (i < IptvChannels.all.length) {
+                return _buildIptvChannelCard(IptvChannels.all[i], t);
+              }
+              return _buildSportsMatchCard(_sports[i - IptvChannels.all.length], t);
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildSportsMatchCard(SportsMatch match, ThemeService t) {
+    final countdown = _countdowns[match.id];
+    final isOpen = match.isStreamOpen;
+    final isLive = match.isLive;
+
+    return GestureDetector(
+      onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => SportsPlayerScreen(match: match))),
+      child: Container(
+        width: 210,
+        margin: const EdgeInsets.only(right: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          color: Colors.white,
+          border: Border.all(
+            color: isLive
+                ? Colors.red
+                : Colors.black.withValues(alpha: 0.08),
+            width: isLive ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isLive
+                  ? Colors.red.withValues(alpha: 0.15)
+                  : Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16, offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // League + badge row
+              Row(
+                children: [
+                  if (match.leagueLogoUrl.isNotEmpty)
+                    CachedNetworkImage(
+                      imageUrl: match.leagueLogoUrl,
+                      width: 16, height: 16, fit: BoxFit.contain,
+                      errorWidget: (_, __, ___) => const SizedBox(),
+                    ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      match.leagueName.isNotEmpty ? match.leagueName : 'Match',
+                      style: GoogleFonts.inter(
+                          color: Colors.black54,
+                          fontSize: 10, fontWeight: FontWeight.w600),
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (isLive)
+                    _liveBadge()
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(match.status.toUpperCase(),
+                          style: GoogleFonts.inter(
+                              color: Colors.black87,
+                              fontSize: 9, fontWeight: FontWeight.w800)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Teams row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _matchTeam(match.team1LogoUrl, match.team1Name, t),
+                  Text('vs',
+                      style: GoogleFonts.inter(
+                          color: Colors.black26,
+                          fontSize: 12, fontWeight: FontWeight.w800)),
+                  _matchTeam(match.team2LogoUrl, match.team2Name, t),
+                ],
+              ),
+              const Spacer(),
+              // Bottom strip — countdown or watch now
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: isOpen
+                      ? Colors.black.withValues(alpha: 0.04)
+                      : Colors.orange.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isOpen
+                        ? Colors.black.withValues(alpha: 0.08)
+                        : Colors.orange.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: isOpen
+                    ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const Icon(Icons.play_circle_rounded,
+                            color: Colors.black87, size: 14),
+                        const SizedBox(width: 5),
+                        Text('Watch Now',
+                            style: GoogleFonts.inter(
+                                color: Colors.black87,
+                                fontSize: 12, fontWeight: FontWeight.w700)),
+                      ])
+                    : _countdownRow(countdown, t),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fadeIn(duration: 350.ms).scale(begin: const Offset(0.96, 0.96), duration: 300.ms, curve: Curves.easeOutCubic);
+  }
+
+  Widget _liveBadge() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(6)),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 5, height: 5,
+          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+      const SizedBox(width: 3),
+      Text('LIVE', style: GoogleFonts.inter(
+          color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
+    ]),
+  );
+
+  Widget _teamInitial(String name, ThemeService t) => Center(
+    child: Text(
+      name.isNotEmpty ? name[0].toUpperCase() : '?',
+      style: GoogleFonts.inter(
+          color: Colors.black54,
+          fontSize: 18, fontWeight: FontWeight.w800),
+    ),
+  );
+
+  Widget _matchTeam(String logoUrl, String name, ThemeService t) {
+    return SizedBox(
+      width: 62,
+      child: Column(
+        children: [
+          Container(
+            width: 42, height: 42,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black.withValues(alpha: 0.05),
+            ),
+            child: ClipOval(
+              child: logoUrl.isNotEmpty
+                  ? CachedNetworkImage(imageUrl: logoUrl, fit: BoxFit.contain,
+                      errorWidget: (_, __, ___) => _teamInitial(name, t))
+                  : _teamInitial(name, t),
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(name, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(color: Colors.black87, fontSize: 10, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
+  Widget _countdownRow(Duration? remaining, ThemeService t) {
+    if (remaining == null) {
+      return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const Icon(Icons.play_circle_rounded, color: Colors.black87, size: 14),
+        const SizedBox(width: 5),
+        Text('Watch Now', style: GoogleFonts.inter(
+            color: Colors.black87, fontSize: 12, fontWeight: FontWeight.w700)),
+      ]);
+    }
+    final h = remaining.inHours;
+    final m = remaining.inMinutes % 60;
+    final s = remaining.inSeconds % 60;
+    final label = h > 0
+        ? '${h}h ${m.toString().padLeft(2,'0')}m ${s.toString().padLeft(2,'0')}s'
+        : '${m.toString().padLeft(2,'0')}:${s.toString().padLeft(2,'0')}';
+    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+      const Icon(Icons.timer_outlined, color: Colors.orange, size: 13),
+      const SizedBox(width: 5),
+      Text(label, style: GoogleFonts.inter(
+          color: Colors.black87, fontSize: 12, fontWeight: FontWeight.w700)),
+    ]);
+  }
+
+  Widget _buildIptvChannelCard(IptvChannel ch, ThemeService t) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => IptvPlayerScreen(
+            channel: ch,
+            allChannels: IptvChannels.all,
+          ),
+        ),
+      ),
+      child: Container(
+        width: 160,
+        margin: const EdgeInsets.only(right: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          color: Colors.white,
+          border: Border.all(
+            color: Colors.black.withValues(alpha: 0.08),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16, offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Live badge row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Container(width: 5, height: 5,
+                          decoration: const BoxDecoration(
+                              color: Colors.white, shape: BoxShape.circle)),
+                      const SizedBox(width: 3),
+                      Text('LIVE', style: GoogleFonts.inter(
+                          color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
+                    ]),
+                  ),
+                  const Icon(Icons.play_circle_rounded,
+                      color: Colors.black87, size: 18),
+                ],
+              ),
+              const Spacer(),
+              // Logo
+              Container(
+                width: 56, height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: Colors.black.withValues(alpha: 0.08)),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: ch.logoUrl.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: ch.logoUrl,
+                          fit: BoxFit.contain,
+                          errorWidget: (_, __, ___) => const Icon(
+                              Icons.live_tv_rounded,
+                              color: Colors.black45, size: 28),
+                        )
+                      : const Icon(Icons.live_tv_rounded,
+                          color: Colors.black45, size: 28),
+                ),
+              ),
+              const Spacer(),
+              // Channel name
+              Text(
+                ch.name,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  color: Colors.black, fontSize: 12, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 4),
+              Text('IPTV · DASH',
+                  style: GoogleFonts.inter(
+                      color: Colors.black45, fontSize: 9, fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5)),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fadeIn(duration: 350.ms).scale(begin: const Offset(0.96, 0.96), duration: 300.ms, curve: Curves.easeOutCubic);
   }
 }

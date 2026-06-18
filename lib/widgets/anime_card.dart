@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/anime.dart';
 import '../services/theme_service.dart';
+import '../services/anilist_service.dart';
 import '../screens/anime_detail_screen.dart';
 
 class AnimeCard extends StatefulWidget {
@@ -129,6 +130,7 @@ class _AnimeCardState extends State<AnimeCard>
                               child: anime.coverImage != null
                                   ? CachedNetworkImage(
                                       imageUrl: anime.coverImage!,
+                                      httpHeaders: AnilistService.imageHeaders,
                                       fit: BoxFit.cover,
                                       placeholder: (_, __) =>
                                           _placeholder(t),

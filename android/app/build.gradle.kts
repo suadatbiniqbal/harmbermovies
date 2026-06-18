@@ -11,10 +11,14 @@ plugins {
 
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
-
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-}
+val hasReleaseSigning = keystorePropertiesFile.exists() &&
+    FileInputStream(keystorePropertiesFile).use { input ->
+        keystoreProperties.load(input)
+        keystoreProperties.containsKey("keyAlias") &&
+        keystoreProperties.containsKey("keyPassword") &&
+        keystoreProperties.containsKey("storeFile") &&
+        keystoreProperties.containsKey("storePassword")
+    }
 
 android {
     namespace = "com.movies.harmber"
@@ -40,18 +44,20 @@ android {
 
     
     signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String
+        if (hasReleaseSigning) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
         }
     }
 
     buildTypes {
         release {
-            // Use your real keystore instead of debug
-            signingConfig = signingConfigs.getByName("release")
+            // Use real keystore if configured, otherwise fallback to debug signing
+            signingConfig = if (hasReleaseSigning) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
 
             // R8 shrinks & optimises code → smaller APK, faster startup
             isMinifyEnabled = true

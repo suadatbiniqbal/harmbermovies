@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harmber Sports Admin</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0a0a12;--card:#12121e;--card2:#1a1a2e;
+    --border:rgba(108,99,255,.2);--accent:#6c63ff;--accent2:#00c9a7;
+    --red:#ef4444;--text:#fff;--muted:rgba(255,255,255,.45);
+    --input:#1e1e30;--radius:14px;
+  }
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+  .logo{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+  header h1{font-size:18px;font-weight:800}
+  header span{font-size:12px;color:var(--muted);margin-left:4px}
+  .badge{background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;letter-spacing:.5px}
+  #status-bar{padding:10px 24px;font-size:13px;display:none;align-items:center;gap:8px}
+  #status-bar.show{display:flex}
+  #status-bar.ok{background:rgba(0,201,167,.1);border-bottom:1px solid rgba(0,201,167,.2);color:var(--accent2)}
+  #status-bar.err{background:rgba(239,68,68,.1);border-bottom:1px solid rgba(239,68,68,.2);color:var(--red)}
+  .container{max-width:900px;margin:0 auto;padding:24px 16px}
+  .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+  .toolbar h2{font-size:16px;font-weight:800}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:10px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:.15s}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:#5a52d5}
+  .btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+  .btn-danger:hover{background:rgba(239,68,68,.25)}
+  .btn-ghost{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.08)}
+  .btn-ghost:hover{color:#fff;background:rgba(255,255,255,.1)}
+  .btn-sm{padding:6px 12px;font-size:12px}
+  .match-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;transition:.15s}
+  .match-card:hover{border-color:var(--accent);box-shadow:0 4px 20px rgba(108,99,255,.1)}
+  .teams{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+  .team-logo{width:36px;height:36px;border-radius:50%;background:var(--card2);border:2px solid rgba(108,99,255,.3);object-fit:contain;display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden;flex-shrink:0}
+  .team-logo img{width:100%;height:100%;object-fit:contain}
+  .vs{font-size:11px;font-weight:800;color:var(--muted);flex-shrink:0}
+  .match-info{flex:1;min-width:0}
+  .match-title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .match-meta{font-size:11px;color:var(--muted);margin-top:2px}
+  .status-badge{padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800;letter-spacing:.5px;flex-shrink:0}
+  .live{background:var(--red);color:#fff}
+  .upcoming{background:rgba(108,99,255,.2);color:var(--accent);border:1px solid rgba(108,99,255,.3)}
+  .finished{background:rgba(255,255,255,.08);color:var(--muted)}
+  .actions{display:flex;gap:8px;flex-shrink:0}
+  .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty svg{margin-bottom:16px;opacity:.3}
+  /* MODAL */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+  .overlay.open{display:flex}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:20px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;padding:24px}
+  .modal h3{font-size:18px;font-weight:800;margin-bottom:20px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .form-full{grid-column:1/-1}
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px}
+  input,select,textarea{width:100%;background:var(--input);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:.15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,.15)}
+  select option{background:var(--card2)}
+  textarea{resize:vertical;min-height:60px}
+  .section-label{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.5px;text-transform:uppercase;margin:16px 0 10px;grid-column:1/-1;border-bottom:1px solid var(--border);padding-bottom:6px}
+  .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+  .loader{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .countdown-hint{font-size:11px;color:var(--muted);margin-top:4px}
+  /* Login */
+  #login-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center}
+  .login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;width:340px;text-align:center}
+  .login-card h2{font-size:20px;font-weight:800;margin-bottom:6px}
+  .login-card p{color:var(--muted);font-size:13px;margin-bottom:24px}
+  .login-card input{margin-bottom:12px;text-align:center;letter-spacing:2px}
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-full{grid-column:1}.match-card{flex-wrap:wrap}.actions{width:100%;justify-content:flex-end}}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="logo" style="margin:0 auto 16px;width:48px;height:48px;font-size:22px">⚽</div>
+    <h2>Sports Admin</h2>
+    <p>Enter the admin PIN to continue</p>
+    <input type="password" id="pin-input" placeholder="PIN" maxlength="12">
+    <button class="btn btn-primary" style="width:100%" onclick="checkPin()">Unlock</button>
+    <div id="pin-err" style="color:var(--red);font-size:12px;margin-top:8px;display:none">Incorrect PIN</div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">⚽</div>
+  <div>
+    <h1>Sports Admin <span>· Harmber</span></h1>
+  </div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+    <span id="conn-badge" style="font-size:11px;color:var(--muted)">Connecting…</span>
+    <span class="badge">LIVE</span>
+  </div>
+</header>
+
+<div id="status-bar"></div>
+
+<div class="container">
+  <div class="toolbar">
+    <h2 id="match-count">Matches (0)</h2>
+    <button class="btn btn-primary" onclick="openModal()">+ Add Match</button>
+  </div>
+  <div id="matches-list">
+    <div class="empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      <p>Loading matches…</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h3 id="modal-title">Add Match</h3>
+    <div class="form-grid">
+      <div class="section-label">Match Info</div>
+      <div class="form-full">
+        <label>Match Title</label>
+        <input id="f-title" type="text" placeholder="e.g. Brazil vs Argentina">
+      </div>
+      <div>
+        <label>Team 1 Name</label>
+        <input id="f-t1name" type="text" placeholder="Brazil">
+      </div>
+      <div>
+        <label>Team 2 Name</label>
+        <input id="f-t2name" type="text" placeholder="Argentina">
+      </div>
+      <div>
+        <label>Team 1 Logo URL</label>
+        <input id="f-t1logo" type="url" placeholder="https://…">
+      </div>
+      <div>
+        <label>Team 2 Logo URL</label>
+        <input id="f-t2logo" type="url" placeholder="https://…">
+      </div>
+
+      <div class="section-label">League</div>
+      <div>
+        <label>League Name</label>
+        <input id="f-league" type="text" placeholder="FIFA World Cup">
+      </div>
+      <div>
+        <label>League Logo URL</label>
+        <input id="f-lleague" type="url" placeholder="https://…">
+      </div>
+
+      <div class="section-label">Hero & Streams</div>
+      <div class="form-full">
+        <label>Hero Image URL (shown in hero carousel)</label>
+        <input id="f-hero" type="url" placeholder="https://…  (wide landscape image)">
+      </div>
+      <div>
+        <label>Server 1 URL (Primary)</label>
+        <input id="f-s1" type="url" placeholder="https://…">
+      </div>
+      <div>
+        <label>Server 2 URL (Backup)</label>
+        <input id="f-s2" type="url" placeholder="https://…">
+      </div>
+
+      <div class="section-label">Timing (IST)</div>
+      <div>
+        <label>Match Time (IST)</label>
+        <input id="f-mtime" type="datetime-local">
+        <div class="countdown-hint">Kick-off time shown to users</div>
+      </div>
+      <div>
+        <label>Stream Opens At (IST)</label>
+        <input id="f-otime" type="datetime-local">
+        <div class="countdown-hint">Player unlocks at this time. Leave blank = always open</div>
+      </div>
+
+      <div class="section-label">Status & Order</div>
+      <div>
+        <label>Status</label>
+        <select id="f-status">
+          <option value="upcoming">Upcoming</option>
+          <option value="live">Live</option>
+          <option value="finished">Finished</option>
+        </select>
+      </div>
+      <div>
+        <label>Sort Order (lower = first)</label>
+        <input id="f-order" type="number" value="0" min="0">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveMatch()">
+        <span id="save-label">Save Match</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, onValue, set, remove, push } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const CONFIG = {
+  apiKey: "AIzaSyApubO067JYW1ih6AUii86Nu0jC6WpFcVI",
+  authDomain: "harmber.firebaseapp.com",
+  databaseURL: "https://harmber-default-rtdb.firebaseio.com",
+  projectId: "harmber",
+  storageBucket: "harmber.firebasestorage.app",
+  messagingSenderId: "227933260927",
+  appId: "1:227933260927:android:0c101c91d898b86738034a"
+};
+
+const ADMIN_PIN = "harmber2024"; // Change this PIN
+const IST_OFFSET = 5.5 * 60; // IST = UTC+5:30
+
+window.checkPin = () => {
+  const pin = document.getElementById('pin-input').value;
+  if (pin === ADMIN_PIN) {
+    document.getElementById('login-screen').style.display = 'none';
+    init();
+  } else {
+    document.getElementById('pin-err').style.display = 'block';
+    document.getElementById('pin-input').value = '';
+  }
+};
+document.getElementById('pin-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') window.checkPin();
+});
+
+let db, matchesRef;
+let _matches = {};
+let _editingId = null;
+
+function init() {
+  const app = initializeApp(CONFIG);
+  db = getDatabase(app);
+  matchesRef = ref(db, 'sports/matches');
+  document.getElementById('conn-badge').textContent = '● Connected';
+  document.getElementById('conn-badge').style.color = '#00c9a7';
+
+  onValue(matchesRef, snap => {
+    _matches = snap.val() || {};
+    renderMatches();
+  }, err => {
+    showStatus('Firebase error: ' + err.message, true);
+  });
+}
+
+function renderMatches() {
+  const list = document.getElementById('matches-list');
+  const entries = Object.entries(_matches)
+    .map(([id, v]) => ({ id, ...v }))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  document.getElementById('match-count').textContent = `Matches (${entries.length})`;
+
+  if (!entries.length) {
+    list.innerHTML = `<div class="empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      <p>No matches yet. Click <strong>+ Add Match</strong> to get started.</p></div>`;
+    return;
+  }
+
+  list.innerHTML = entries.map(m => {
+    const statusClass = m.status === 'live' ? 'live' : m.status === 'upcoming' ? 'upcoming' : 'finished';
+    const t1 = m.team1LogoUrl ? `<img src="${m.team1LogoUrl}" onerror="this.style.display='none'">` : '⚽';
+    const t2 = m.team2LogoUrl ? `<img src="${m.team2LogoUrl}" onerror="this.style.display='none'">` : '⚽';
+    const timeStr = m.matchTime ? fmtIST(m.matchTime) : '—';
+    const openStr = m.streamOpenTime ? 'Opens: ' + fmtIST(m.streamOpenTime) : 'Always open';
+    return `<div class="match-card">
+      <div class="teams">
+        <div class="team-logo">${t1}</div>
+        <div class="vs">VS</div>
+        <div class="team-logo">${t2}</div>
+      </div>
+      <div class="match-info">
+        <div class="match-title">${m.title || m.team1Name + ' vs ' + m.team2Name}</div>
+        <div class="match-meta">${m.leagueName || 'No league'} · ${timeStr} IST · ${openStr}</div>
+      </div>
+      <span class="status-badge ${statusClass}">${m.status?.toUpperCase()}</span>
+      <div class="actions">
+        <button class="btn btn-ghost btn-sm" onclick="editMatch('${m.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteMatch('${m.id}','${(m.title||'').replace(/'/g,"\\'")}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// IST helpers
+function utcToISTLocal(utcIso) {
+  if (!utcIso) return '';
+  const d = new Date(utcIso);
+  const ist = new Date(d.getTime() + IST_OFFSET * 60000);
+  return ist.toISOString().slice(0, 16);
+}
+function istLocalToUTC(localIso) {
+  if (!localIso) return null;
+  const d = new Date(localIso + ':00');
+  return new Date(d.getTime() - IST_OFFSET * 60000).toISOString();
+}
+function fmtIST(utcIso) {
+  const ist = new Date(new Date(utcIso).getTime() + IST_OFFSET * 60000);
+  return ist.toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', hour12:true });
+}
+
+window.openModal = () => {
+  _editingId = null;
+  document.getElementById('modal-title').textContent = 'Add Match';
+  document.getElementById('save-label').textContent = 'Save Match';
+  clearForm();
+  document.getElementById('modal-overlay').classList.add('open');
+};
+
+window.editMatch = (id) => {
+  const m = _matches[id];
+  if (!m) return;
+  _editingId = id;
+  document.getElementById('modal-title').textContent = 'Edit Match';
+  document.getElementById('save-label').textContent = 'Update Match';
+  document.getElementById('f-title').value = m.title || '';
+  document.getElementById('f-t1name').value = m.team1Name || '';
+  document.getElementById('f-t2name').value = m.team2Name || '';
+  document.getElementById('f-t1logo').value = m.team1LogoUrl || '';
+  document.getElementById('f-t2logo').value = m.team2LogoUrl || '';
+  document.getElementById('f-league').value = m.leagueName || '';
+  document.getElementById('f-lleague').value = m.leagueLogoUrl || '';
+  document.getElementById('f-hero').value = m.heroImageUrl || '';
+  document.getElementById('f-s1').value = m.server1Url || '';
+  document.getElementById('f-s2').value = m.server2Url || '';
+  document.getElementById('f-mtime').value = utcToISTLocal(m.matchTime);
+  document.getElementById('f-otime').value = utcToISTLocal(m.streamOpenTime);
+  document.getElementById('f-status').value = m.status || 'upcoming';
+  document.getElementById('f-order').value = m.order ?? 0;
+  document.getElementById('modal-overlay').classList.add('open');
+};
+
+window.closeModal = () => {
+  document.getElementById('modal-overlay').classList.remove('open');
+  _editingId = null;
+};
+window.closeModalOutside = (e) => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+};
+
+window.saveMatch = async () => {
+  const btn = document.getElementById('save-btn');
+  const label = document.getElementById('save-label');
+  btn.disabled = true;
+  label.innerHTML = '<span class="loader"></span>';
+
+  const matchTimeUTC = istLocalToUTC(document.getElementById('f-mtime').value);
+  const openTimeUTC = istLocalToUTC(document.getElementById('f-otime').value);
+
+  const data = {
+    title: document.getElementById('f-title').value.trim(),
+    team1Name: document.getElementById('f-t1name').value.trim(),
+    team2Name: document.getElementById('f-t2name').value.trim(),
+    team1LogoUrl: document.getElementById('f-t1logo').value.trim(),
+    team2LogoUrl: document.getElementById('f-t2logo').value.trim(),
+    leagueName: document.getElementById('f-league').value.trim(),
+    leagueLogoUrl: document.getElementById('f-lleague').value.trim(),
+    heroImageUrl: document.getElementById('f-hero').value.trim(),
+    server1Url: document.getElementById('f-s1').value.trim(),
+    server2Url: document.getElementById('f-s2').value.trim(),
+    matchTime: matchTimeUTC || new Date().toISOString(),
+    status: document.getElementById('f-status').value,
+    order: parseInt(document.getElementById('f-order').value) || 0,
+  };
+  if (openTimeUTC) data.streamOpenTime = openTimeUTC;
+
+  try {
+    if (_editingId) {
+      await set(ref(db, `sports/matches/${_editingId}`), data);
+      showStatus('Match updated successfully!');
+    } else {
+      await push(matchesRef, data);
+      showStatus('Match added successfully!');
+    }
+    closeModal();
+  } catch(e) {
+    showStatus('Error: ' + e.message, true);
+  }
+
+  btn.disabled = false;
+  label.textContent = _editingId ? 'Update Match' : 'Save Match';
+};
+
+window.deleteMatch = async (id, title) => {
+  if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+  try {
+    await remove(ref(db, `sports/matches/${id}`));
+    showStatus('Match deleted.');
+  } catch(e) {
+    showStatus('Error: ' + e.message, true);
+  }
+};
+
+function clearForm() {
+  ['f-title','f-t1name','f-t2name','f-t1logo','f-t2logo','f-league','f-lleague','f-hero','f-s1','f-s2','f-mtime','f-otime'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-status').value = 'upcoming';
+  document.getElementById('f-order').value = '0';
+}
+
+function showStatus(msg, isErr = false) {
+  const bar = document.getElementById('status-bar');
+  bar.textContent = isErr ? '✕ ' + msg : '✓ ' + msg;
+  bar.className = 'status-bar show ' + (isErr ? 'err' : 'ok');
+  bar.style.display = 'flex';
+  setTimeout(() => bar.style.display = 'none', 4000);
+}
+</script>
+</body>
+</html>

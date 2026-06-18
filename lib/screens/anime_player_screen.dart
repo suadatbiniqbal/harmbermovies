@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,6 +14,7 @@ class AnimePlayerScreen extends StatefulWidget {
   final String? posterPath;
   final int totalEpisodes;
   final bool isMovie;
+  final bool isDub;
 
   const AnimePlayerScreen({
     super.key,
@@ -22,6 +24,7 @@ class AnimePlayerScreen extends StatefulWidget {
     this.posterPath,
     required this.totalEpisodes,
     this.isMovie = false,
+    this.isDub = false,
   });
 
   @override
@@ -37,15 +40,55 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
   bool _loading = true;
   bool _hasError = false;
   late int _currentEpisode;
-
   bool _webViewInitialized = false;
+  bool _isDub = false;
+  bool _isLandscape = true;
+  bool _showControls = true;
+  Timer? _controlsTimer;
+
+  void _startControlsTimer() {
+    _controlsTimer?.cancel();
+    _controlsTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) {
+        setState(() {
+          _showControls = false;
+        });
+      }
+    });
+  }
+
+  void _toggleControls() {
+    setState(() {
+      _showControls = !_showControls;
+    });
+    if (_showControls) {
+      _startControlsTimer();
+    } else {
+      _controlsTimer?.cancel();
+    }
+  }
+
+  void _toggleOrientation() {
+    setState(() {
+      _isLandscape = !_isLandscape;
+    });
+    if (_isLandscape) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    }
+  }
 
   String get _url {
     final ep = _currentEpisode < 1 ? 1 : _currentEpisode;
-    if (widget.isMovie) {
-      return 'https://player.videasy.net/anime/${widget.anilistId}';
-    }
-    return 'https://player.videasy.net/anime/${widget.anilistId}/$ep';
+    final lang = _isDub ? 'dub' : 'sub';
+    return 'https://animeplay.cfd/stream/ani/${widget.anilistId}/$ep/$lang';
   }
 
   static const _playerScript = '''
@@ -71,7 +114,7 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
           if(t.tagName==='A'){
             var h = t.getAttribute('href')||'';
             var tg = t.getAttribute('target')||'';
-            var allowed = h.includes('videasy.net') || h.includes('vidsrc') || h.includes('vidfast');
+            var allowed = h.includes('animeplay.cfd');
             if(tg==='_blank' || (!allowed && !h.startsWith('#') && h.length>1)){
               e.preventDefault(); e.stopPropagation(); return false;
             }
@@ -100,7 +143,7 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
       window.open = function(){ return null; };
 
       var style = document.createElement('style');
-      style.textContent = '* { touch-action: manipulation !important; } body { overflow: hidden !important; }';
+      style.textContent = '* { touch-action: manipulation !important; } body, html { overflow: hidden !important; margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; background: #000 !important; } iframe:not([src*="ads"]):not([src*="doubleclick"]) { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 999999 !important; border: none !important; } video { width: 100% !important; height: 100% !important; object-fit: contain !important; }';
       document.head.appendChild(style);
     })();
   ''';
@@ -108,15 +151,18 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
   @override
   void initState() {
     super.initState();
+    // Enforce landscape immediately
     SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
     _currentEpisode = widget.episode;
+    _isDub = widget.isDub; // carry language pref from detail screen
     _initWebView();
     _recordHistory();
+    _startControlsTimer();
   }
 
   void _recordHistory() {
@@ -135,6 +181,7 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setUserAgent('Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(NavigationDelegate(
         onPageStarted: (_) {
@@ -160,10 +207,7 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
           }
         },
         onNavigationRequest: (request) {
-          if (!request.url.contains('videasy.net') &&
-              !request.url.contains('vidfast.pro') &&
-              !request.url.contains('vidsrc.net') &&
-              !request.url.contains('vidsrc') &&
+          if (!request.url.contains('animeplay.cfd') &&
               !request.url.startsWith('about:') &&
               !request.url.startsWith('data:') &&
               !request.url.startsWith('blob:')) {
@@ -188,242 +232,209 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
 
   @override
   void dispose() {
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    _controlsTimer?.cancel();
+    // Restore orientation and system UI
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
-  void _nextEpisode() {
-    if (_currentEpisode < widget.totalEpisodes) {
-      setState(() => _currentEpisode++);
-      _reloadPlayer();
-    }
-  }
-
-  void _previousEpisode() {
-    if (_currentEpisode <= 1) return;
-    setState(() => _currentEpisode--);
-    _reloadPlayer();
-  }
-
-  String get _currentTitle {
-    if (widget.isMovie) return widget.title;
-    return '${widget.title} E$_currentEpisode';
-  }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final t = ThemeService.instance;
-    final isLandscape =
-        MediaQuery.of(context).orientation == Orientation.landscape;
 
-    if (isLandscape) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    } else {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    }
+    // Maintain sticky immersive in build
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: isLandscape
-          ? null
-          : AppBar(
-              backgroundColor: const Color(0xFF0A0A0F),
-              foregroundColor: Colors.white,
-              title: Text(
-                _currentTitle,
-                style: GoogleFonts.inter(
-                    fontSize: 16, fontWeight: FontWeight.w600),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              elevation: 0,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.fullscreen_rounded, color: Colors.white70),
-                  tooltip: 'Full Screen',
-                  onPressed: () {
-                    SystemChrome.setPreferredOrientations([
-                      DeviceOrientation.landscapeLeft,
-                      DeviceOrientation.landscapeRight,
-                    ]);
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _toggleControls,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // WebView player with RepaintBoundary for maximum rendering performance
+            RepaintBoundary(
+              child: WebViewWidget(controller: _controller),
+            ),
+
+            if (_showControls) ...[
+              // Floating Back Button (top-left)
+              Positioned(
+                top: 20,
+                left: 20,
+                child: GestureDetector(
+                  onTap: () {
+                    // Consume gesture and go back
+                    Navigator.pop(context);
                   },
-                ),
-              ],
-            ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                WebViewWidget(controller: _controller),
-                if (isLandscape)
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    child: IconButton(
-                      icon: const Icon(Icons.fullscreen_exit_rounded,
-                          color: Colors.white, size: 28),
-                      style:
-                          IconButton.styleFrom(backgroundColor: Colors.black54),
-                      tooltip: 'Exit Full Screen',
-                      onPressed: () {
-                        SystemChrome.setPreferredOrientations([
-                          DeviceOrientation.portraitUp,
-                        ]);
-                      },
+                  child: RepaintBoundary(
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.65),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ),
-                if (_hasError)
-                  Container(
-                    color: Colors.black,
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.videocam_off_rounded,
-                              color: Colors.white54, size: 48),
-                          const SizedBox(height: 16),
-                          Text('Content Not Available',
-                              style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 8),
-                          Text('Try a different server or check back later.',
-                              style: GoogleFonts.inter(
-                                  color: Colors.white54, fontSize: 14)),
-                          const SizedBox(height: 20),
-                          GestureDetector(
-                            onTap: _reloadPlayer,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: t.accent,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text('Retry',
-                                  style: GoogleFonts.inter(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ).animate().fadeIn(duration: 400.ms),
-                if (_loading)
-                  Container(
-                    color: Colors.black,
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 40,
-                            height: 40,
-                            child: CircularProgressIndicator(
-                              color: t.accent,
-                              strokeWidth: 3,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text('Loading player...',
-                              style: GoogleFonts.inter(
-                                  color: Colors.white54, fontSize: 14)),
-                        ],
-                      ),
-                    ),
-                  ).animate().fadeIn(duration: 200.ms),
-              ],
-            ),
-          ),
-          if (!widget.isMovie && !isLandscape)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0A0A0F),
-                border: Border(
-                  top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
                 ),
               ),
-              child: Row(
-                children: [
-                  _episodeButton(
-                    icon: Icons.skip_previous_rounded,
-                    label: 'Prev',
-                    onTap: _currentEpisode > 1 ? _previousEpisode : null,
+
+              // Fullscreen / Orientation Toggle Button (top-right)
+              Positioned(
+                top: 20,
+                right: 20,
+                child: GestureDetector(
+                  onTap: () {
+                    // Consume gesture
+                    _toggleOrientation();
+                    _startControlsTimer();
+                  },
+                  child: RepaintBoundary(
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.65),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                      ),
+                      child: Icon(
+                        _isLandscape ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
+                ),
+              ),
+
+              // Sub/Dub Toggle (bottom-right only)
+              Positioned(
+                bottom: 20,
+                right: 20,
+                child: RepaintBoundary(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() => _isDub = !_isDub);
+                      _reloadPlayer();
+                      _startControlsTimer();
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Episode $_currentEpisode',
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: Colors.black.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _isDub ? t.accent : Colors.white.withValues(alpha: 0.15),
                         ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isDub ? Icons.subtitles_off_rounded : Icons.subtitles_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _isDub ? 'DUB' : 'SUB',
+                            style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  _episodeButton(
-                    icon: Icons.skip_next_rounded,
-                    label: 'Next',
-                    onTap: _currentEpisode < widget.totalEpisodes
-                        ? _nextEpisode
-                        : null,
-                  ),
-                ],
+                ),
               ),
-            ).animate().fadeIn(delay: 500.ms, duration: 300.ms),
-        ],
-      ),
-    );
-  }
+            ],
 
-  Widget _episodeButton({
-    required IconData icon,
-    required String label,
-    VoidCallback? onTap,
-  }) {
-    final enabled = onTap != null;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: enabled
-              ? Colors.white.withValues(alpha: 0.12)
-              : Colors.white.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon,
-                color: enabled ? Colors.white : Colors.white24, size: 20),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                color: enabled ? Colors.white : Colors.white24,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+            if (_hasError)
+              RepaintBoundary(
+                child: Container(
+                  color: Colors.black,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.videocam_off_rounded,
+                            color: Colors.white54, size: 48),
+                        const SizedBox(height: 16),
+                        Text('Content Not Available',
+                            style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 8),
+                        Text('Please check your internet connection or try again.',
+                            style: GoogleFonts.inter(
+                                color: Colors.white54, fontSize: 14)),
+                        const SizedBox(height: 20),
+                        GestureDetector(
+                          onTap: () {
+                            _reloadPlayer();
+                            _startControlsTimer();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: t.accent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text('Retry',
+                                style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ).animate().fadeIn(duration: 400.ms),
               ),
-            ),
+
+            if (_loading)
+              RepaintBoundary(
+                child: Container(
+                  color: Colors.black,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            color: t.accent,
+                            strokeWidth: 3,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text('Loading player...',
+                            style: GoogleFonts.inter(
+                                color: Colors.white54, fontSize: 14)),
+                      ],
+                    ),
+                  ),
+                ).animate().fadeIn(duration: 200.ms),
+              ),
           ],
         ),
       ),

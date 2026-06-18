@@ -1,7 +1,7 @@
 name: harmber_movies
 description: Harmber Movies - Movie style streaming app
 publish_to: 'none'
-version: 1.0.5
+version: 1.0.8
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -27,6 +27,8 @@ dependencies:
   firebase_messaging: ^16.2.0
   firebase_analytics: ^12.3.0
   path_provider: ^2.1.5
+  firebase_database: ^12.4.2
+  video_player: ^2.11.1
 
 dev_dependencies:
   flutter_test:

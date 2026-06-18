@@ -7,6 +7,19 @@ class AnilistService {
   static final AnilistService instance = AnilistService._();
   AnilistService._();
 
+  static const Map<String, String> imageHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Origin': 'https://anilist.co',
+    'Referer': 'https://anilist.co/',
+  };
+
+  static Map<String, String>? getHeadersForUrl(String url) {
+    if (url.contains('anilist.co') || url.contains('s4.anilist.co')) {
+      return imageHeaders;
+    }
+    return null;
+  }
+
   /// Multiple AniList endpoints — Jio/Airtel block graphql.anilist.co via DNS/DPI.
   /// We try each in order, starting with the last known-working one.
   static const List<String> _endpoints = [
@@ -75,6 +88,9 @@ class AnilistService {
                 headers: {
                   'Content-Type': 'application/json',
                   'Accept': 'application/json',
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                  'Origin': 'https://anilist.co',
+                  'Referer': 'https://anilist.co/',
                 },
                 body: json.encode({
                   'query': query,
@@ -345,6 +361,31 @@ class AnilistService {
       }
     ''';
     final data = await _postQuery(query, variables: {'search': search});
+    if (data == null) return [];
+    final results = data['Page']['media'] as List;
+    _cache[cacheKey] = _CacheEntry(results);
+    _saveCache();
+    return results.map((j) => Anime.fromJson(j)).toList();
+  }
+
+  Future<List<Anime>> getAnimeByGenre(String genre) async {
+    await _initCache();
+    final cacheKey = 'genre_$genre';
+    if (_cache.containsKey(cacheKey) && _cache[cacheKey]!.isValid) {
+      return (_cache[cacheKey]!.data as List)
+          .map((j) => Anime.fromJson(j))
+          .toList();
+    }
+    final query = '''
+      query (\$genre: String) {
+        Page(page: 1, perPage: 25) {
+          media(genre: \$genre, type: ANIME, isAdult: false, sort: POPULARITY_DESC) {
+            $_baseAnimeQuery
+          }
+        }
+      }
+    ''';
+    final data = await _postQuery(query, variables: {'genre': genre});
     if (data == null) return [];
     final results = data['Page']['media'] as List;
     _cache[cacheKey] = _CacheEntry(results);

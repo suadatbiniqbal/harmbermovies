@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
@@ -10,6 +11,7 @@ import '../widgets/ad_banner.dart';
 import 'movie_detail_screen.dart';
 import 'tv_detail_screen.dart';
 import 'anime_detail_screen.dart';
+import '../services/anilist_service.dart';
 
 class WatchlistScreen extends StatefulWidget {
   const WatchlistScreen({super.key});
@@ -162,7 +164,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                                 crossAxisSpacing: 12,
                                 mainAxisSpacing: 16,
                               ),
-                              cacheExtent: 400,
+                              scrollCacheExtent: const ScrollCacheExtent.pixels(400.0),
                               itemCount: filtered.length,
                               itemBuilder: (_, i) =>
                                   _WatchlistCard(
@@ -435,6 +437,7 @@ class _WatchlistCard extends StatelessWidget {
                     child: resolvedUrl.isNotEmpty
                         ? CachedNetworkImage(
                             imageUrl: resolvedUrl,
+                            httpHeaders: AnilistService.getHeadersForUrl(resolvedUrl),
                             fit: BoxFit.cover,
                             placeholder: (_, __) => _shimmerBox(t),
                             errorWidget: (_, __, ___) => _fallback(t),

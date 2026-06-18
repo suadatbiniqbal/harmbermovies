@@ -33,6 +33,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
   bool _hasError = false;
   bool _loadingEpisodes = false;
   bool _expandedOverview = false;
+  bool _showAllEpisodes = false;
 
   @override
   void initState() {
@@ -89,6 +90,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
     setState(() {
       _loadingEpisodes = true;
       _episodes = [];
+      _showAllEpisodes = false;
     });
     try {
       final eps = await _api.getSeasonEpisodes(widget.id, season.seasonNumber);
@@ -142,17 +144,21 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
                         _buildStats(t),
                         const SizedBox(height: 18),
                         _buildActionRow(t),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 12),
                         const AdBannerContainer(),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 12),
                         if (_show!.genres.isNotEmpty) _buildGenres(t),
-                        if (_show!.genres.isNotEmpty)
-                          const SizedBox(height: 20),
+                        if (_show!.genres.isNotEmpty) const SizedBox(height: 20),
                         _buildOverview(t),
+                        const AdNativeContainer(),
+                        const SizedBox(height: 8),
                         if (_seasons.isNotEmpty) _buildEpisodesSection(t),
+                        const AdBannerContainer(),
                         if (_cast.isNotEmpty) _buildCast(t),
+                        const AdBannerContainer(),
                         if (_images.isNotEmpty) _buildImages(t),
                         if (_similar.isNotEmpty) _buildSimilar(t),
+                        const AdBannerContainer(),
                         const SizedBox(height: 60),
                       ],
                     ),
@@ -636,7 +642,7 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
           )
         else
           ..._episodes
-              .take(12)
+              .take(_showAllEpisodes ? _episodes.length : 12)
               .indexed
               .map((entry) => _buildEpisodeTile(entry.$2, entry.$1, t)),
 
@@ -645,9 +651,16 @@ class _TVDetailScreenState extends State<TVDetailScreen> {
             padding: const EdgeInsets.only(top: 8, bottom: 4),
             child: Center(
               child: TextButton.icon(
-                onPressed: () {},
-                icon: Icon(Icons.expand_more_rounded, color: t.accent),
-                label: Text('+${_episodes.length - 12} more episodes',
+                onPressed: () {
+                  setState(() {
+                    _showAllEpisodes = !_showAllEpisodes;
+                  });
+                },
+                icon: Icon(
+                    _showAllEpisodes ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                    color: t.accent),
+                label: Text(
+                    _showAllEpisodes ? 'Show less' : '+${_episodes.length - 12} more episodes',
                     style: GoogleFonts.inter(
                         color: t.accent, fontWeight: FontWeight.w600)),
               ),

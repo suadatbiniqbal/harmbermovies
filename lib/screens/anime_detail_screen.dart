@@ -30,6 +30,8 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
   bool _loading = true;
   bool _hasError = false;
   bool _expandDesc = false;
+  int _selectedEpisodeRangeIndex = 0;
+  bool _isDub = false; // language preference: false=sub, true=dub
 
   @override
   void initState() {
@@ -127,6 +129,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
           posterPath: _anime!.coverImage,
           totalEpisodes: _anime!.episodes ?? episode,
           isMovie: _anime!.format == 'MOVIE',
+          isDub: _isDub,
         ),
       ),
     );
@@ -197,6 +200,8 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                       if (a.genres.isNotEmpty) _buildGenres(a, t),
                       if (a.genres.isNotEmpty) const SizedBox(height: 20),
                       _buildDescription(a, t),
+                      const AdNativeContainer(),
+                      const SizedBox(height: 20),
                       if (a.relations.isNotEmpty) _buildRelations(a, t),
                       if (a.format != 'MOVIE') _buildEpisodes(a, t),
                       if (a.recommendations.isNotEmpty)
@@ -298,6 +303,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                 },
                 child: CachedNetworkImage(
                   imageUrl: a.bannerImage ?? a.coverImage!,
+                  httpHeaders: AnilistService.imageHeaders,
                   fit: BoxFit.cover,
                   alignment: Alignment.topCenter,
                 ),
@@ -375,6 +381,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
               child: a.coverImage != null
                   ? CachedNetworkImage(
                       imageUrl: a.coverImage!,
+                      httpHeaders: AnilistService.imageHeaders,
                       width: 120,
                       height: 178,
                       fit: BoxFit.cover)
@@ -472,61 +479,98 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
   }
 
   Widget _buildActionButtons(Anime a, ThemeService t) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () => _playEpisode(1),
-            icon: const Icon(Icons.play_arrow_rounded, size: 26),
-            label: Text(a.format == 'MOVIE' ? 'Watch Movie' : 'Watch Episode 1',
-                style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w800, fontSize: 15)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
-              minimumSize: const Size(double.infinity, 54),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
-              elevation: 0,
-            ),
+        // ── Sub / Dub language toggle ──────────────────────────
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: t.surface2,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: t.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _LangPill(
+                label: 'SUB',
+                icon: Icons.subtitles_rounded,
+                selected: !_isDub,
+                accent: t.accent,
+                onTap: () => setState(() => _isDub = false),
+              ),
+              _LangPill(
+                label: 'DUB',
+                icon: Icons.subtitles_off_rounded,
+                selected: _isDub,
+                accent: t.accent,
+                onTap: () => setState(() => _isDub = true),
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 10),
-        ListenableBuilder(
-          listenable: WatchlistService.instance,
-          builder: (context, _) {
-            final isIn = WatchlistService.instance.isInWatchlist(a.id);
-            return GestureDetector(
-              onTap: () {
-                final movie = a.toMovie();
-                WatchlistService.instance.toggle(movie);
-                final nowIn = WatchlistService.instance.isInWatchlist(a.id);
-                Fluttertoast.showToast(
-                  msg:
-                      nowIn ? '✓ Added to Watchlist' : 'Removed from Watchlist',
-                  backgroundColor: t.accent,
-                  textColor: Colors.white,
-                  gravity: ToastGravity.BOTTOM,
-                );
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                height: 54,
-                width: 54,
-                decoration: BoxDecoration(
-                  color: isIn ? t.accent.withValues(alpha: 0.15) : t.surface2,
-                  borderRadius: BorderRadius.circular(14),
-                  border:
-                      Border.all(color: isIn ? t.accent : t.border, width: 1.5),
-                ),
-                child: Icon(
-                  isIn ? Icons.bookmark_rounded : Icons.bookmark_add_outlined,
-                  color: isIn ? t.accent : t.textMuted,
-                  size: 24,
+        // ── Watch + Watchlist buttons ──────────────────────────
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _playEpisode(1),
+                icon: const Icon(Icons.play_arrow_rounded, size: 26),
+                label: Text(
+                  a.format == 'MOVIE'
+                      ? 'Watch Movie'
+                      : 'Watch Ep 1 • ${_isDub ? "DUB" : "SUB"}',
+                  style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w800, fontSize: 15)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  minimumSize: const Size(double.infinity, 54),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
                 ),
               ),
-            );
-          },
+            ),
+            const SizedBox(width: 10),
+            ListenableBuilder(
+              listenable: WatchlistService.instance,
+              builder: (context, _) {
+                final isIn = WatchlistService.instance.isInWatchlist(a.id);
+                return GestureDetector(
+                  onTap: () {
+                    final movie = a.toMovie();
+                    WatchlistService.instance.toggle(movie);
+                    final nowIn = WatchlistService.instance.isInWatchlist(a.id);
+                    Fluttertoast.showToast(
+                      msg: nowIn ? '✓ Added to Watchlist' : 'Removed from Watchlist',
+                      backgroundColor: t.accent,
+                      textColor: Colors.white,
+                      gravity: ToastGravity.BOTTOM,
+                    );
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    height: 54,
+                    width: 54,
+                    decoration: BoxDecoration(
+                      color: isIn ? t.accent.withValues(alpha: 0.15) : t.surface2,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: isIn ? t.accent : t.border, width: 1.5),
+                    ),
+                    child: Icon(
+                      isIn ? Icons.bookmark_rounded : Icons.bookmark_add_outlined,
+                      color: isIn ? t.accent : t.textMuted,
+                      size: 24,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ],
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1);
@@ -739,6 +783,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                           borderRadius: BorderRadius.circular(10),
                           child: CachedNetworkImage(
                               imageUrl: r.coverImage ?? '',
+                              httpHeaders: AnilistService.imageHeaders,
                               fit: BoxFit.cover,
                               errorWidget: (_, __, ___) =>
                                   Container(color: t.surface2)),
@@ -766,6 +811,32 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
   }
 
   Widget _buildEpisodes(Anime a, ThemeService t) {
+    final int totalCount = a.streamingEpisodes.isNotEmpty 
+        ? a.streamingEpisodes.length 
+        : (a.episodes ?? 1);
+    
+    final int pageSize = 50;
+    final int pageCount = (totalCount / pageSize).ceil();
+    
+    // Ensure selected index is within bounds
+    if (_selectedEpisodeRangeIndex >= pageCount) {
+      _selectedEpisodeRangeIndex = 0;
+    }
+    
+    final int start = _selectedEpisodeRangeIndex * pageSize;
+    final int end = (start + pageSize).clamp(0, totalCount);
+    
+    List<Widget> episodeWidgets = [];
+    if (a.streamingEpisodes.isNotEmpty) {
+      final subList = a.streamingEpisodes.sublist(start, end);
+      episodeWidgets = subList.map((ep) => _buildRichEpisodeTile(ep, t)).toList();
+    } else {
+      episodeWidgets = List.generate(
+        end - start,
+        (i) => _buildSimpleEpisodeTile(start + i + 1, t),
+      );
+    }
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -773,28 +844,73 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _sectionHeader('Episodes', t),
-            if (a.streamingEpisodes.isNotEmpty)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: t.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text('${a.streamingEpisodes.length} Available',
-                    style: GoogleFonts.inter(
-                        color: t.accent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: t.accent.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: Text(
+                a.streamingEpisodes.isNotEmpty
+                    ? '${a.streamingEpisodes.length} Available'
+                    : '$totalCount Episodes',
+                style: GoogleFonts.inter(
+                    color: t.accent,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
-        if (a.streamingEpisodes.isNotEmpty)
-          ...a.streamingEpisodes.map((ep) => _buildRichEpisodeTile(ep, t))
-        else
-          ...List.generate(
-              a.episodes ?? 1, (i) => _buildSimpleEpisodeTile(i + 1, t)),
+        
+        // Pagination range selector if pageCount > 1
+        if (pageCount > 1) ...[
+          SizedBox(
+            height: 38,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: pageCount,
+              physics: const BouncingScrollPhysics(),
+              itemBuilder: (context, idx) {
+                final rangeStart = idx * pageSize + 1;
+                final rangeEnd = ((idx + 1) * pageSize).clamp(0, totalCount);
+                final isSelected = _selectedEpisodeRangeIndex == idx;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedEpisodeRangeIndex = idx;
+                    });
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? t.accent : t.surface2,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isSelected ? t.accent : t.border,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$rangeStart - $rangeEnd',
+                        style: GoogleFonts.inter(
+                          color: isSelected ? Colors.white : t.textMuted,
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        
+        ...episodeWidgets,
         const SizedBox(height: 24),
       ],
     );
@@ -830,6 +946,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                   children: [
                     CachedNetworkImage(
                       imageUrl: ep.thumbnail ?? '',
+                      httpHeaders: AnilistService.imageHeaders,
                       fit: BoxFit.cover,
                       errorWidget: (_, __, ___) => Container(
                         color: t.surface2,
@@ -963,6 +1080,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                               borderRadius: BorderRadius.circular(12),
                               child: CachedNetworkImage(
                                   imageUrl: r.coverImage ?? '',
+                                  httpHeaders: AnilistService.imageHeaders,
                                   fit: BoxFit.cover,
                                   width: double.infinity,
                                   errorWidget: (_, __, ___) =>
@@ -1053,6 +1171,69 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
               style: GoogleFonts.inter(
                   color: t.text, fontSize: 12, fontWeight: FontWeight.w600)),
         ],
+      ),
+    );
+  }
+}
+
+// ── Sub/Dub language pill toggle ──────────────────────────────────────────────
+
+class _LangPill extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _LangPill({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.accent,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? accent : Colors.transparent,
+          borderRadius: BorderRadius.circular(9),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  )
+                ]
+              : [],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: selected ? Colors.white : Colors.white54,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                color: selected ? Colors.white : Colors.white54,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

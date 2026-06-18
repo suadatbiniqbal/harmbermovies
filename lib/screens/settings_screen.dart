@@ -47,6 +47,138 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
+  void _showPrivacyPolicy(ThemeService t) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: BoxDecoration(
+            color: t.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(top: BorderSide(color: t.border)),
+          ),
+          child: Column(
+            children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: t.textMuted.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Privacy Policy',
+                      style: GoogleFonts.inter(
+                        color: t.text,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close_rounded, color: t.text),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(color: t.border, height: 1),
+              Expanded(
+                child: ListView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    _buildPolicySection(
+                      t,
+                      '1. Information We Collect',
+                      'Harmber Movies does not require user registration or accounts. We do not collect personal identifiers such as names, email addresses, or phone numbers. However, the app may collect non-personal usage statistics to improve performance and user experience.',
+                    ),
+                    _buildPolicySection(
+                      t,
+                      '2. Third-Party Services',
+                      'We integrate several third-party services for essential app functionalities:\n'
+                      '• TMDB: Used for retrieving movie and TV show information, poster images, and cast details.\n'
+                      '• AniList: Used for anime descriptions, details, and schedules.\n'
+                      '• Firebase: Used for application analytics, error reporting, and push notifications.\n'
+                      'These services may collect device identifiers and usage statistics in accordance with their respective privacy policies.',
+                    ),
+                    _buildPolicySection(
+                      t,
+                      '3. Media Streaming & Player',
+                      'Harmber Movies serves as a catalog and metadata browser. Streaming content is provided by external servers (such as vidfast.pro and animeplay.cfd) loaded in a secure in-app browser interface. We do not host, store, or distribute any video files on our servers.',
+                    ),
+                    _buildPolicySection(
+                      t,
+                      '4. Data Security & Storage',
+                      'Your personal preferences, watchlists, and streaming history are stored locally on your device using shared preferences. We do not upload this data to external database servers.',
+                    ),
+                    _buildPolicySection(
+                      t,
+                      '5. Changes to This Policy',
+                      'We may update our Privacy Policy from time to time. We encourage users to check this page periodically for any changes. Continued use of the app after updates constitutes acceptance of the changes.',
+                    ),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: Text(
+                        'Last updated: June 2026',
+                        style: GoogleFonts.inter(
+                          color: t.textMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPolicySection(ThemeService t, String title, String body) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              color: t.text,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            body,
+            style: GoogleFonts.inter(
+              color: t.textMuted,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -319,22 +451,6 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                 _settingsCard(
                   t,
-                  icon: Icons.code_rounded,
-                  title: 'GitHub',
-                  subtitle: 'View source & releases',
-                  onTap: () async {
-                    final uri = Uri.parse(
-                        'https://github.com/suadatbiniqbal/harmbermovies/releases');
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri,
-                          mode: LaunchMode.externalApplication);
-                    }
-                  },
-                  index: cardIndex++,
-                ),
-
-                _settingsCard(
-                  t,
                   icon: Icons.forum_rounded,
                   title: 'Discord',
                   subtitle: 'Join our community',
@@ -361,6 +477,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   icon: Icons.privacy_tip_outlined,
                   title: 'Privacy Policy',
                   subtitle: 'Read our privacy policy',
+                  onTap: () => _showPrivacyPolicy(t),
                   index: cardIndex++,
                 ),
                 const SizedBox(height: 40),
