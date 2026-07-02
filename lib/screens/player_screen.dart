@@ -94,9 +94,9 @@ class _PlayerScreenState extends State<PlayerScreen>
   String get _url {
     if (_selectedServer == 2) {
       if (widget.isTV) {
-        return 'https://vidlink.pro/tv/${widget.id}/$_currentSeason/$_currentEpisode';
+        return 'https://vidlink.pro/tv/${widget.id}/$_currentSeason/$_currentEpisode?player=jw';
       }
-      return 'https://vidlink.pro/movie/${widget.id}';
+      return 'https://vidlink.pro/movie/${widget.id}?player=jw';
     }
     if (widget.isTV) {
       return 'https://vidfast.pro/tv/${widget.id}/$_currentSeason/$_currentEpisode?autoPlay=true';
