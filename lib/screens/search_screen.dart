@@ -96,7 +96,6 @@ class _SearchScreenState extends State<SearchScreen>
     'Romance': Icons.favorite_rounded,
     'Sci-Fi': Icons.science_rounded,
     'Slice of Life': Icons.weekend_rounded,
-    'Sports': Icons.sports_soccer_rounded,
     'Supernatural': Icons.auto_awesome_motion_rounded,
     'Thriller': Icons.warning_rounded,
   };
@@ -646,7 +645,6 @@ class _SearchScreenState extends State<SearchScreen>
             Genre(id: 11, name: 'Romance'),
             Genre(id: 12, name: 'Sci-Fi'),
             Genre(id: 13, name: 'Slice of Life'),
-            Genre(id: 14, name: 'Sports'),
             Genre(id: 15, name: 'Supernatural'),
             Genre(id: 16, name: 'Thriller'),
           ]

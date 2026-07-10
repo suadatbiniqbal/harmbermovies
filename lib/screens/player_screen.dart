@@ -92,19 +92,17 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   String get _url {
-    if (_selectedServer == 2) {
-      if (widget.isTV) {
-        return 'https://vidlink.pro/tv/${widget.id}/$_currentSeason/$_currentEpisode?player=jw';
-      }
-      return 'https://vidlink.pro/movie/${widget.id}?player=jw';
-    }
     if (widget.isTV) {
-      return 'https://vidfast.pro/tv/${widget.id}/$_currentSeason/$_currentEpisode?autoPlay=true';
+      return 'https://vaplayer.ru/embed/tv/${widget.id}/$_currentSeason/$_currentEpisode';
     }
-    return 'https://vidfast.pro/movie/${widget.id}?autoPlay=true';
+    return 'https://vaplayer.ru/embed/movie/${widget.id}';
   }
 
   void _switchServer(int server) {
+    // We only have one server now based on the request, but I'll keep the UI for now or simplify it.
+    // The user said "for naie use the same url as existig" which is a bit confusing if I'm changing the base url.
+    // Actually, maybe they meant "for name" or something.
+    // I'll stick to the requested URLs.
     setState(() {
       _selectedServer = server;
       _showServerPicker = false;
@@ -204,11 +202,23 @@ class _PlayerScreenState extends State<PlayerScreen>
     if (_webViewInitialized) return;
     _webViewInitialized = true;
 
+    // Force hide loading after 10 seconds as a fallback
+    Timer(const Duration(seconds: 10), () {
+      if (mounted && _loading) {
+        setState(() => _loading = false);
+      }
+    });
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setUserAgent('Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(NavigationDelegate(
+        onProgress: (progress) {
+          if (progress > 50 && mounted && _loading) {
+            setState(() => _loading = false);
+          }
+        },
         onPageStarted: (_) {
           if (mounted) {
             setState(() {

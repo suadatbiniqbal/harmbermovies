@@ -644,7 +644,6 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
       'Romance': Color(0xFFF43F5E),
       'Sci-Fi': Color(0xFF06B6D4),
       'Slice of Life': Color(0xFF10B981),
-      'Sports': Color(0xFF22C55E),
       'Supernatural': Color(0xFF9CA3AF),
       'Thriller': Color(0xFFDC2626),
     };

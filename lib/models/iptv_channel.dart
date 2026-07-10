@@ -12,7 +12,7 @@ class IptvChannel {
     required this.manifestUri,
     required this.clearKeys,
     this.logoUrl = '',
-    this.category = 'Sports',
+    this.category = 'General',
   });
 }
 

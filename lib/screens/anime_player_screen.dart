@@ -179,11 +179,23 @@ class _AnimePlayerScreenState extends State<AnimePlayerScreen>
     if (_webViewInitialized) return;
     _webViewInitialized = true;
 
+    // Force hide loading after 10 seconds as a fallback
+    Timer(const Duration(seconds: 10), () {
+      if (mounted && _loading) {
+        setState(() => _loading = false);
+      }
+    });
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setUserAgent('Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(NavigationDelegate(
+        onProgress: (progress) {
+          if (progress > 50 && mounted && _loading) {
+            setState(() => _loading = false);
+          }
+        },
         onPageStarted: (_) {
           if (mounted) {
             setState(() {
